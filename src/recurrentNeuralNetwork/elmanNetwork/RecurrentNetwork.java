@@ -1,7 +1,7 @@
 /**
  * Created by zorin on 14.03.2017.
  */
-
+package recurrentNeuralNetwork.elmanNetwork;
 public class RecurrentNetwork {
 
 

@@ -1,3 +1,5 @@
+package recurrentNeuralNetwork.elmanNetwork;
+
 import activationFunction.IActivationFunction;
 
 /**

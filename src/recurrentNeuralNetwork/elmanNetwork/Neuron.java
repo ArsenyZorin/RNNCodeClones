@@ -1,6 +1,7 @@
 /**
  * Created by zorin on 15.03.2017.
  */
+package recurrentNeuralNetwork.elmanNetwork;
 import activationFunction.IActivationFunction;
 
 public class Neuron {
