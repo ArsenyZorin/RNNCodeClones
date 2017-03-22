@@ -2,7 +2,7 @@
  * Created by zorin on 15.03.2017.
  */
 package recurrentNeuralNetwork.elmanNetwork;
-import activationFunction.IActivationFunction;
+import activationFunctions.*;
 
 public class Neuron {
 
@@ -16,10 +16,10 @@ public class Neuron {
     public double output;
 
     /* Activation function */
-    protected IActivationFunction func;
+    protected SigmoidFunction func;
 
     /* Neuron class constructor */
-    public Neuron(int inputCount, IActivationFunction func){
+    public Neuron(int inputCount, SigmoidFunction func){
         this.inputCount = inputCount;
         this.weights = new double[this.inputCount];
         this.func = func;

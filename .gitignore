@@ -1,3 +1,12 @@
-/out/*
 *.iml
 *.class
+*.ipr
+*.iws
+.idea/
+*.xml
+
+# Compiled stuff
+build
+out
+bin
+**/bin/

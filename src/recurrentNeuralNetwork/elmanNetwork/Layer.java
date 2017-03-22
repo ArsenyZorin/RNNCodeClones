@@ -1,6 +1,6 @@
 package recurrentNeuralNetwork.elmanNetwork;
 
-import activationFunction.IActivationFunction;
+import activationFunctions.*;
 
 /**
  * Created by zorin on 15.03.2017.
@@ -22,7 +22,7 @@ public class Layer {
     /* Output vector of the layer */
     private double[] output;
 
-    public Layer(int inputsCount, int neuronsCount, IActivationFunction function) {
+    public Layer(int inputsCount, int neuronsCount, SigmoidFunction function) {
         this.inputsCount = inputsCount;
         this.neuronsCount = neuronsCount;
         this.neurons = new Neuron[this.neuronsCount];

@@ -1,17 +1,44 @@
 package recurrentNeuralNetwork.lstmNetwork;
+import activationFunctions.*;
+import additionalClasses.*;
 
 /**
  * Created by arseny on 21.03.17.
  */
 public class Gate {
 
-    /* Value of previous output */
-    private double prevOutputValue;
+    /* Value of previous cell */
+    private Matrix prevHiddenValue;
+
+    /* Weight of previous - current vector */
+    private Matrix prevHiddenWeight;
 
     /* Input value of the current cell */
-    private double inputValue;
+    private Matrix inputValue;
 
-    /* Previous state value */
-    private double prevState;
+    /* Weight of the input - current vector*/
+    private Matrix inputWeight;
 
+    private int inputAmount;
+    private int outputAmount;
+
+    /* Activation functions */
+    private IActivationFunction func;
+
+    public Gate(int inputAmount, int outputAmount, Matrix prevHiddenWeight, Matrix inputWeight) {
+        this.inputAmount = inputAmount;
+        this.outputAmount = outputAmount;
+        this.prevHiddenWeight = prevHiddenWeight;
+        this.inputWeight = inputWeight;
+
+        this.prevHiddenValue = Matrix.random(this.inputAmount, this.outputAmount);
+        this.inputValue = Matrix.random(this.inputAmount, this.outputAmount);
+    }
+
+    public Matrix getGateValue(IActivationFunction func){
+        Matrix prod1 = this.prevHiddenValue.multiply(this.prevHiddenWeight);
+        Matrix prod2 = this.inputValue.multiply(this.inputWeight);
+
+        return prod1.add(prod2).getActFunc(func);
+    }
 }
