@@ -40,7 +40,10 @@ public class Cell {
     }
 
     public Matrix getCellState(Matrix prevCellState){
-        Matrix inputGateValue = inputGate.
+        //Matrix inputGateValue = inputGate.
+
+        //Some cap for method
+        return new Matrix(1,1);
     }
 
 
