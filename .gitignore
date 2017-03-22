@@ -2,7 +2,7 @@
 *.class
 *.ipr
 *.iws
-.idea/
+.idea/*
 *.xml
 
 # Compiled stuff
