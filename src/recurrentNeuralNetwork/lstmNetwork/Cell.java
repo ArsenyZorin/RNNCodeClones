@@ -37,9 +37,17 @@ public class Cell {
     }
 
     public Matrix getCellState(Matrix prevCellState){
+<<<<<<< HEAD
         Matrix inputGateValue = inputGate.getGateValue(new SigmoidFunction(1.0));
         Matrix forgetGateValue = forgetGate.getGateValue(new SigmoidFunction(1.0));
         Matrix candidateValue = candidate.getGateValue(new HyperbolicTanFunction(1.0));
+=======
+        //Matrix inputGateValue = inputGate.
+
+        //Some cap for method
+        return new Matrix(1,1);
+    }
+>>>>>>> b0deb1198473fd1d6d04c452a36208375ad6582e
 
         Matrix firstCellValue = prevCellState.elementMultyply(forgetGateValue);
         Matrix secondCellValue = inputGateValue.elementMultyply(candidateValue);
