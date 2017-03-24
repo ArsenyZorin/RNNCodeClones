@@ -25,11 +25,13 @@ public class Gate {
     /* Activation functions */
     private IActivationFunction func;
 
-    public Gate(int inputAmount, int outputAmount, Matrix prevHiddenWeight, Matrix inputWeight) {
-        this.inputAmount = inputAmount;
-        this.outputAmount = outputAmount;
+    public Gate(Matrix prevHiddenWeight, Matrix inputWeight, int outputAmount) {
+
         this.prevHiddenWeight = prevHiddenWeight;
         this.inputWeight = inputWeight;
+
+        this.inputAmount = inputWeight.getSize();
+        this.outputAmount = outputAmount;
 
         this.prevHiddenValue = Matrix.random(this.inputAmount, this.outputAmount);
         this.inputValue = Matrix.random(this.inputAmount, this.outputAmount);
@@ -39,6 +41,6 @@ public class Gate {
         Matrix prod1 = this.prevHiddenValue.multiply(this.prevHiddenWeight);
         Matrix prod2 = this.inputValue.multiply(this.inputWeight);
 
-        return prod1.add(prod2).getActFunc(func);
+        return (prod1.add(prod2)).getActFunc(func);
     }
 }

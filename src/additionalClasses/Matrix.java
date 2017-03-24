@@ -29,6 +29,10 @@ public class Matrix {
         this.array = array;
     }
 
+    public int getSize(){
+        return this.array.length;
+    }
+
     public Matrix add (/* Matrix ar1, */Matrix ar2){
         if(this.rows != ar2.rows || this.cols != ar2.cols)
             throw new ArithmeticException("Matrix dimensions error");
