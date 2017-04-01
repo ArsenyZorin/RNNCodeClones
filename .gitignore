@@ -2,8 +2,8 @@
 *.class
 *.ipr
 *.iws
-.idea/*
 *.xml
+.idea/
 
 # Compiled stuff
 build

@@ -25,9 +25,9 @@ public class Layer {
         this.hiddenAmount = hiddenAmount;
     }
 
-    /* Or not Matrix */
-    public Matrix calculateOutput(){
-        Cell cell = new Cell(this.inputWeight, this.prevHiddenWeight, this.outputAmount);
+    public Matrix activate(Matrix inputWeight){
+
+        Cell cell = new Cell(inputWeight, this.prevHiddenWeight, this.outputAmount);
 
         this.cellState = cell.getCellState(prevCellState);
         this.prevCellState = this.cellState;

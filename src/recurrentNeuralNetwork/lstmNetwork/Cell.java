@@ -27,7 +27,7 @@ public class Cell {
         this.inputWeight = inputWeight;
         this.prevHiddenWeight = prevHiddenWeight;
 
-        this.inputAmount = inputWeight.getSize();
+        this.inputAmount = inputWeight.getArrSize();
         this.outputAmount = outputAmount;
 
         this.inputGate = new Gate(this.prevHiddenWeight, this.inputWeight, this.outputAmount);
@@ -37,17 +37,10 @@ public class Cell {
     }
 
     public Matrix getCellState(Matrix prevCellState){
-<<<<<<< HEAD
+
         Matrix inputGateValue = inputGate.getGateValue(new SigmoidFunction(1.0));
         Matrix forgetGateValue = forgetGate.getGateValue(new SigmoidFunction(1.0));
         Matrix candidateValue = candidate.getGateValue(new HyperbolicTanFunction(1.0));
-=======
-        //Matrix inputGateValue = inputGate.
-
-        //Some cap for method
-        return new Matrix(1,1);
-    }
->>>>>>> b0deb1198473fd1d6d04c452a36208375ad6582e
 
         Matrix firstCellValue = prevCellState.elementMultyply(forgetGateValue);
         Matrix secondCellValue = inputGateValue.elementMultyply(candidateValue);
@@ -57,7 +50,7 @@ public class Cell {
 
     public Matrix getHiddenValue(Matrix cellStateValue){
         Matrix outputGateValue = outputGate.getGateValue(new SigmoidFunction(1.0));
-        Matrix hiddenFirstValue = cellStateValue.getActFunc(new HyperbolicTanFunction(1.0));
+        Matrix hiddenFirstValue = cellStateValue.applyActFunc(new HyperbolicTanFunction(1.0));
 
         return hiddenFirstValue.elementMultyply(outputGateValue);
     }

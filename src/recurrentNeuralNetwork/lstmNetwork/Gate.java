@@ -30,7 +30,7 @@ public class Gate {
         this.prevHiddenWeight = prevHiddenWeight;
         this.inputWeight = inputWeight;
 
-        this.inputAmount = inputWeight.getSize();
+        this.inputAmount = inputWeight.getArrSize();
         this.outputAmount = outputAmount;
 
         this.prevHiddenValue = Matrix.random(this.inputAmount, this.outputAmount);
@@ -41,6 +41,6 @@ public class Gate {
         Matrix prod1 = this.prevHiddenValue.multiply(this.prevHiddenWeight);
         Matrix prod2 = this.inputValue.multiply(this.inputWeight);
 
-        return (prod1.add(prod2)).getActFunc(func);
+        return (prod1.add(prod2)).applyActFunc(func);
     }
 }
