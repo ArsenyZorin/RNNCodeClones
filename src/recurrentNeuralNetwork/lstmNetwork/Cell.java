@@ -2,16 +2,12 @@ package recurrentNeuralNetwork.lstmNetwork;
 import activationFunctions.*;
 import additionalClasses.*;
 
+import java.util.ArrayList;
+
 /**
  * Created by arseny on 21.03.17.
  */
 public class Cell {
-
-    /* Weight of previous - current vector */
-    private Matrix prevHiddenWeight;
-
-    /* Weight of the input - current vector*/
-    private Matrix inputWeight;
 
     private int inputAmount;
     private int outputAmount;
@@ -22,18 +18,15 @@ public class Cell {
     private Gate outputGate;
     private Gate candidate;
 
-    public Cell(Matrix inputWeight, Matrix prevHiddenWeight, int outputAmount){
+    public Cell(int inputAmount, int outputAmount, Matrix inputWeight, Matrix prevHiddenWeight){
 
-        this.inputWeight = inputWeight;
-        this.prevHiddenWeight = prevHiddenWeight;
-
-        this.inputAmount = inputWeight.getArrSize();
+        this.inputAmount = inputAmount;
         this.outputAmount = outputAmount;
 
-        this.inputGate = new Gate(this.prevHiddenWeight, this.inputWeight, this.outputAmount);
-        this.forgetGate = new Gate(this.prevHiddenWeight, this.inputWeight, this.outputAmount);
-        this.outputGate = new Gate(this.prevHiddenWeight, this.inputWeight, this.outputAmount);
-        this.candidate = new Gate(this.prevHiddenWeight, this.inputWeight, this.outputAmount);
+        this.inputGate = new Gate(inputWeight, prevHiddenWeight, this.inputAmount, this.outputAmount);
+        this.forgetGate = new Gate(inputWeight, prevHiddenWeight, this.inputAmount, this.outputAmount);;
+        this.outputGate = new Gate(inputWeight, prevHiddenWeight, this.inputAmount, this.outputAmount);;
+        this.candidate = new Gate(inputWeight, prevHiddenWeight, this.inputAmount, this.outputAmount);;
     }
 
     public Matrix getCellState(Matrix prevCellState){
@@ -53,5 +46,22 @@ public class Cell {
         Matrix hiddenFirstValue = cellStateValue.applyActFunc(new HyperbolicTanFunction(1.0));
 
         return hiddenFirstValue.elementMultyply(outputGateValue);
+    }
+
+    public ArrayList<Matrix> getParams(){
+        ArrayList<Matrix> res = new ArrayList<>();
+        for (Matrix matrix : inputGate.getParams())
+            res.add(matrix);
+
+        for (Matrix matrix : forgetGate.getParams())
+            res.add(matrix);
+
+        for (Matrix matrix : outputGate.getParams())
+            res.add(matrix);
+
+        for (Matrix matrix : candidate.getParams())
+            res.add(matrix);
+
+        return  res;
     }
 }

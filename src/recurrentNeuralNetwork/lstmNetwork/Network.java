@@ -10,11 +10,11 @@ public class Network {
 
     private ArrayList<Layer> layers;
     private Matrix input;
-
+/*
     public Network(Matrix input, ArrayList<Layer> layers){
         this.input = input;
         this.layers = layers;
-    }
+    }*/
 
     public Network(ArrayList<Layer> layers){
         this.layers = layers;
@@ -28,13 +28,13 @@ public class Network {
         this.input = input;
     }
 
-    public Network makeLSTM(int hiddenAmount, int hiddenLayers, int outputAmount){
-        layers = new ArrayList<Layer>();
+    public Network makeLSTM(int inputAmount, int hiddenAmount, int hiddenLayers, int outputAmount){
+        layers = new ArrayList<>();
         for (int i = 0; i < hiddenLayers; i++){
             if (i == 0)
-                layers.add(new Layer(this.input, this.input.getArrSize(), hiddenAmount, outputAmount));
+                layers.add(new Layer(/*this.input,*/ inputAmount, hiddenAmount, outputAmount));
             else
-                layers.add(new Layer(this.input, hiddenAmount, hiddenAmount, outputAmount));
+                layers.add(new Layer(/*this.input, */hiddenAmount, hiddenAmount, outputAmount));
         }
         return new Network(layers);
     }
@@ -49,6 +49,13 @@ public class Network {
     public void reset(){
         for(Layer layer : layers)
             layer.reset();
+    }
+
+    public ArrayList<Matrix> getParams(){
+        ArrayList<Matrix> res = new ArrayList<>();
+        for (Layer layer : layers)
+            res.addAll(layer.getParams());
+        return res;
     }
 
 }

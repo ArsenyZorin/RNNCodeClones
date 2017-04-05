@@ -2,6 +2,8 @@ package recurrentNeuralNetwork.lstmNetwork;
 
 import additionalClasses.Matrix;
 
+import java.util.ArrayList;
+
 /**
  * Created by arseny on 22.03.17.
  */
@@ -14,25 +16,28 @@ public class Layer {
     /*  */
     private Matrix inputWeight;
     private Matrix prevHiddenWeight;
+
     private int outputAmount;
     private int hiddenAmount;
     private int inputAmount;
 
-    public Layer(Matrix inputWeight, int inputAmount, int hiddenAmount, int outputAmount){
-        this.inputWeight = inputWeight;
-        this.inputAmount = inputAmount;
-        this.outputAmount = outputAmount;
-        this.hiddenAmount = hiddenAmount;
+    private Cell cell;
+
+    public Layer(/*Matrix inputWeight, */int iinputAmount, int hhiddenAmount, int ooutputAmount){
+        //this.inputWeight = inputWeight;
+        this.inputAmount = iinputAmount;
+        this.outputAmount = ooutputAmount;
+        this.hiddenAmount = hhiddenAmount;
     }
 
     public Matrix activate(Matrix inputWeight){
 
-        Cell cell = new Cell(inputWeight, this.prevHiddenWeight, this.outputAmount);
+        this.cell = new Cell(this.inputAmount, this.outputAmount, inputWeight, this.prevHiddenWeight);
 
-        this.cellState = cell.getCellState(prevCellState);
+        this.cellState = this.cell.getCellState(prevCellState);
         this.prevCellState = this.cellState;
 
-        Matrix output = cell.getHiddenValue(this.cellState);
+        Matrix output = this.cell.getHiddenValue(this.cellState);
         this.prevHiddenWeight = output;
 
         return output;
@@ -41,5 +46,9 @@ public class Layer {
     public void reset(){
         this.prevHiddenWeight = new Matrix(this.outputAmount);
         this.prevCellState = new Matrix(this.outputAmount);
+    }
+
+    public ArrayList<Matrix> getParams(){
+        return this.cell.getParams();
     }
 }

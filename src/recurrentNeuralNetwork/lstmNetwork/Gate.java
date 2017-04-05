@@ -1,6 +1,9 @@
 package recurrentNeuralNetwork.lstmNetwork;
 import activationFunctions.*;
 import additionalClasses.*;
+import sun.text.resources.ro.FormatData_ro;
+
+import java.util.ArrayList;
 
 /**
  * Created by arseny on 21.03.17.
@@ -22,15 +25,12 @@ public class Gate {
     private int inputAmount;
     private int outputAmount;
 
-    /* Activation functions */
-    private IActivationFunction func;
-
-    public Gate(Matrix prevHiddenWeight, Matrix inputWeight, int outputAmount) {
+    public Gate(Matrix inputWeight, Matrix prevHiddenWeight, int inputAmount, int outputAmount) {
 
         this.prevHiddenWeight = prevHiddenWeight;
         this.inputWeight = inputWeight;
 
-        this.inputAmount = inputWeight.getArrSize();
+        this.inputAmount = inputAmount;
         this.outputAmount = outputAmount;
 
         this.prevHiddenValue = Matrix.random(this.inputAmount, this.outputAmount);
@@ -43,4 +43,12 @@ public class Gate {
 
         return (prod1.add(prod2)).applyActFunc(func);
     }
+
+    public ArrayList<Matrix> getParams(){
+        ArrayList<Matrix> res = new ArrayList<>();
+        res.add(this.prevHiddenValue);
+        res.add(this.inputValue);
+        return res;
+    }
+
 }
