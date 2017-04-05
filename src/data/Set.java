@@ -8,10 +8,13 @@ import java.util.ArrayList;
  * Created by arseny on 31.03.17.
  */
 public class Set {
-    private int inputDim;
-    private int outputDim;
-    private Loss lossTraining;
-    private Loss lossReporting;
+    protected int inputDim;
+    protected int outputDim;
+    protected Loss lossTraining;
+    protected Loss lossReporting;
+    protected ArrayList<Sequence> training;
+    protected ArrayList<Sequence> validation;
+    protected ArrayList<Sequence> testing;
 
     public Loss getLossTraining() {
         return lossTraining;
@@ -28,10 +31,6 @@ public class Set {
     public void setLossReporting(Loss lossReporting) {
         this.lossReporting = lossReporting;
     }
-
-    private ArrayList<Sequence> training;
-    private ArrayList<Sequence> validation;
-    private ArrayList<Sequence> testing;
 
     public int getInputDim() {
         return inputDim;
