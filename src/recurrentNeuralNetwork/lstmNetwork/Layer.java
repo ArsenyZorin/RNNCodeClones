@@ -17,22 +17,22 @@ public class Layer {
     private Matrix inputWeight;
     private Matrix prevHiddenWeight;
 
-    private int outputAmount;
+    //private int outputAmount;
     private int hiddenAmount;
     private int inputAmount;
 
     private Cell cell;
 
-    public Layer(/*Matrix inputWeight, */int iinputAmount, int hhiddenAmount, int ooutputAmount){
+    public Layer(/*Matrix inputWeight, */int inputAmount, int hiddenAmount/*, int outputAmount*/){
         //this.inputWeight = inputWeight;
-        this.inputAmount = iinputAmount;
-        this.outputAmount = ooutputAmount;
-        this.hiddenAmount = hhiddenAmount;
+        this.inputAmount = inputAmount;
+        //this.outputAmount = outputAmount;
+        this.hiddenAmount = hiddenAmount;
     }
 
     public Matrix activate(Matrix inputWeight){
 
-        this.cell = new Cell(this.inputAmount, this.outputAmount, inputWeight, this.prevHiddenWeight);
+        this.cell = new Cell(this.inputAmount, this.hiddenAmount, inputWeight, this.prevHiddenWeight);
 
         this.cellState = this.cell.getCellState(prevCellState);
         this.prevCellState = this.cellState;
@@ -44,8 +44,8 @@ public class Layer {
     }
 
     public void reset(){
-        this.prevHiddenWeight = new Matrix(this.outputAmount);
-        this.prevCellState = new Matrix(this.outputAmount);
+        this.prevHiddenWeight = new Matrix(this.hiddenAmount);
+        this.prevCellState = new Matrix(this.hiddenAmount);
     }
 
     public ArrayList<Matrix> getParams(){

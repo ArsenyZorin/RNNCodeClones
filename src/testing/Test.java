@@ -13,19 +13,17 @@ public class Test {
     public static void main(String[] args) {
 
         Set data = new XORdata();
-        ArrayList<Layer> layers = new ArrayList<Layer>();
-        //Matrix input = new Matrix(inp);
-        Network lstm = new Network(/*input, */layers);
+        ArrayList<Layer> layers = new ArrayList<>();
+        Network lstm = new Network(layers);
+        lstm = lstm.makeLSTM(data.getInputDim(),3, 1, data.getOutputDim());
 
-        lstm = lstm.makeLSTM(2,3, 1, 1);
-
-        int epoch = 100;
-        double learningRate = 0.001;
+        int epoch = 100_000;
+        double learningRate = 0.0001;
 
         Trainer.train(epoch, learningRate, lstm, data);
 
         System.out.println("Training completed");
-        System.out.println("Test: 1,1");
+        System.out.println("Test: 1, 1");
         Matrix input = new Matrix(new double[] {1,1});
         Matrix output = lstm.activate(input);
         System.out.println("Test: 1, 1. Output: " + output.getArrayElem(0));
@@ -33,7 +31,7 @@ public class Test {
         System.out.println("Test: 0, 1");
         input = new Matrix(new double[] {0,1});
         output = lstm.activate(input);
-        System.out.println("Test: 1, 1. Output: " + output.getArrayElem(0));
+        System.out.println("Test: 0, 1. Output: " + output.getArrayElem(0));
 
         System.out.println("DONE");
     }

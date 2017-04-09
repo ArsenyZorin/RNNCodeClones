@@ -33,7 +33,7 @@ public class Gate {
         this.inputAmount = inputAmount;
         this.outputAmount = outputAmount;
 
-        this.prevHiddenValue = Matrix.random(this.inputAmount, this.outputAmount);
+        this.prevHiddenValue = Matrix.random(this.outputAmount, this.outputAmount);
         this.inputValue = Matrix.random(this.inputAmount, this.outputAmount);
     }
 

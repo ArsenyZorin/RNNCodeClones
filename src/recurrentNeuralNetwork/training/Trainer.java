@@ -20,8 +20,6 @@ public class Trainer {
 
     public static double train(int epochs, double rate, Network network, Set data){
         Double res = 0.0;
-        Double reportedLossValidation = 0.0;
-        Double reportedLossTesting = 0.0;
         for (int epoch = 0; epoch < epochs; epoch++){
 
             res = pass(rate, network, data.getTraining(),

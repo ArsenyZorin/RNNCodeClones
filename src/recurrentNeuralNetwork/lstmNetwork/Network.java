@@ -32,9 +32,9 @@ public class Network {
         layers = new ArrayList<>();
         for (int i = 0; i < hiddenLayers; i++){
             if (i == 0)
-                layers.add(new Layer(/*this.input,*/ inputAmount, hiddenAmount, outputAmount));
+                layers.add(new Layer(/*this.input,*/ inputAmount, hiddenAmount/*, outputAmount*/));
             else
-                layers.add(new Layer(/*this.input, */hiddenAmount, hiddenAmount, outputAmount));
+                layers.add(new Layer(/*this.input, */hiddenAmount, hiddenAmount/*, outputAmount*/));
         }
         return new Network(layers);
     }
