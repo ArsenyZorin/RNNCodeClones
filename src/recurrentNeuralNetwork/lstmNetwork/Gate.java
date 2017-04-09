@@ -37,6 +37,11 @@ public class Gate {
         this.inputValue = Matrix.random(this.inputAmount, this.outputAmount);
     }
 
+    /**
+     * Gets value of gate
+     * @param func Activation function
+     * @return Value of gate
+     */
     public Matrix getGateValue(IActivationFunction func){
         Matrix prod1 = this.prevHiddenValue.multiply(this.prevHiddenWeight);
         Matrix prod2 = this.inputValue.multiply(this.inputWeight);

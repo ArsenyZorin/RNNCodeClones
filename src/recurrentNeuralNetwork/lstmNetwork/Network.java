@@ -10,11 +10,6 @@ public class Network {
 
     private ArrayList<Layer> layers;
     private Matrix input;
-/*
-    public Network(Matrix input, ArrayList<Layer> layers){
-        this.input = input;
-        this.layers = layers;
-    }*/
 
     public Network(ArrayList<Layer> layers){
         this.layers = layers;
@@ -28,17 +23,29 @@ public class Network {
         this.input = input;
     }
 
-    public Network makeLSTM(int inputAmount, int hiddenAmount, int hiddenLayers, int outputAmount){
+    /**
+     * LSTM network creation
+     * @param inputDimension Dimension of input vector
+     * @param hiddenDimension Dimension of hidden layer
+     * @param hiddenLayers Amount of hidden layers
+     * @return LSTM network
+     */
+    public Network makeLSTM(int inputDimension, int hiddenDimension, int hiddenLayers){
         layers = new ArrayList<>();
         for (int i = 0; i < hiddenLayers; i++){
             if (i == 0)
-                layers.add(new Layer(/*this.input,*/ inputAmount, hiddenAmount/*, outputAmount*/));
+                layers.add(new Layer(inputDimension, hiddenDimension));
             else
-                layers.add(new Layer(/*this.input, */hiddenAmount, hiddenAmount/*, outputAmount*/));
+                layers.add(new Layer(hiddenDimension, hiddenDimension));
         }
         return new Network(layers);
     }
 
+    /**
+     * LSTM network activation
+     * @param input
+     * @return
+     */
     public Matrix activate(Matrix input){
         Matrix prev = input;
         for (Layer layer : this.layers)
@@ -46,11 +53,18 @@ public class Network {
         return prev;
     }
 
+    /**
+     *
+     */
     public void reset(){
         for(Layer layer : layers)
             layer.reset();
     }
 
+    /**
+     *
+     * @return
+     */
     public ArrayList<Matrix> getParams(){
         ArrayList<Matrix> res = new ArrayList<>();
         for (Layer layer : layers)

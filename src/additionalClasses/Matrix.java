@@ -58,6 +58,11 @@ public class Matrix {
 
     public double getCacheElem (int index){ return this.backArray[index]; }
 
+    /**
+     * Addition of two matrix
+     * @param ar2 Second matrix for addition
+     * @return Result of matrix addition
+     */
     public Matrix add (Matrix ar2){
         if(this.rows != ar2.rows || this.cols != ar2.cols)
             throw new ArithmeticException("Matrix dimensions error");
@@ -73,6 +78,11 @@ public class Matrix {
         return res;
     }
 
+    /**
+     * Matrix multiplication
+     * @param ar2 Second matrix for multiplication
+     * @return Result of multiplication
+     */
     public Matrix multiply (Matrix ar2){
         if(this.cols != ar2.rows){
             throw new ArithmeticException("Matrix dimension error!");
@@ -104,6 +114,11 @@ public class Matrix {
         return res;
     }
 
+    /**
+     * Element-by-element multiplication
+     * @param ar2 Second matrix for EbE multiplication
+     * @return Multiplication result
+     */
     public Matrix elementMultyply (Matrix ar2){
         if(this.rows != ar2.rows || this.cols != ar2.cols){
             throw new ArithmeticException("Matrix dimension error!");
@@ -121,6 +136,11 @@ public class Matrix {
         return res;
     }
 
+    /**
+     * Application of the activation function
+     * @param func Function that must be applied
+     * @return Result of application
+     */
     public Matrix applyActFunc(IActivationFunction func){
         Matrix res = new Matrix(this.rows, this.cols);
         for (int i = 0; i < this.array.length; i++)
@@ -132,6 +152,12 @@ public class Matrix {
         return res;
     }
 
+    /**
+     * Filling a matrix with random values
+     * @param cols Amount of matrix columns
+     * @param rows Amount of matrix rows
+     * @return Result matrix
+     */
     public static Matrix random(int cols, int rows) {
         Matrix res = new Matrix(rows, cols);
         for (int i = 0; i < res.array.length; i++)

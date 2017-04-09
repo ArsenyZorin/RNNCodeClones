@@ -13,8 +13,6 @@ public class Layer {
     private Matrix prevCellState;
     /* Current cell state value */
     private Matrix cellState;
-    /*  */
-    private Matrix inputWeight;
     private Matrix prevHiddenWeight;
 
     //private int outputAmount;
@@ -24,9 +22,7 @@ public class Layer {
     private Cell cell;
 
     public Layer(/*Matrix inputWeight, */int inputAmount, int hiddenAmount/*, int outputAmount*/){
-        //this.inputWeight = inputWeight;
         this.inputAmount = inputAmount;
-        //this.outputAmount = outputAmount;
         this.hiddenAmount = hiddenAmount;
     }
 

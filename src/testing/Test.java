@@ -15,10 +15,10 @@ public class Test {
         Set data = new XORdata();
         ArrayList<Layer> layers = new ArrayList<>();
         Network lstm = new Network(layers);
-        lstm = lstm.makeLSTM(data.getInputDim(),3, 1, data.getOutputDim());
+        lstm = lstm.makeLSTM(data.getInputDim(),3, 30);
 
         int epoch = 100_000;
-        double learningRate = 0.0001;
+        double learningRate = 0.00001;
 
         Trainer.train(epoch, learningRate, lstm, data);
 

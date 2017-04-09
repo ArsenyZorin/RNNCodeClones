@@ -29,6 +29,11 @@ public class Cell {
         this.candidate = new Gate(inputWeight, prevHiddenWeight, this.inputAmount, this.outputAmount);;
     }
 
+    /**
+     * Cell state computing
+     * @param prevCellState state of previous cell
+     * @return cell value
+     */
     public Matrix getCellState(Matrix prevCellState){
 
         Matrix inputGateValue = inputGate.getGateValue(new SigmoidFunction(1.0));
@@ -41,6 +46,11 @@ public class Cell {
         return firstCellValue.add(secondCellValue);
     }
 
+    /**
+     *
+     * @param cellStateValue
+     * @return
+     */
     public Matrix getHiddenValue(Matrix cellStateValue){
         Matrix outputGateValue = outputGate.getGateValue(new SigmoidFunction(1.0));
         Matrix hiddenFirstValue = cellStateValue.applyActFunc(new HyperbolicTanFunction(1.0));

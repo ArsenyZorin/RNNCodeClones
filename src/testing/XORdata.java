@@ -21,6 +21,10 @@ public class XORdata extends Set {
         this.testing = getTrainingData();
     }
 
+    /**
+     * Training data creation
+     * @return List of training data
+     */
     private static ArrayList<Sequence> getTrainingData(){
         ArrayList<Sequence> res = new ArrayList<>();
 

@@ -35,6 +35,11 @@ public class Layer {
         }
     }
 
+    /**
+     * Computing an output value
+     * @param input
+     * @return layer output value
+     */
     public double[] compute(double[] input){
         for(int i = 0; i < neuronsCount; i++)
             output[i] = neurons[i].compute(input) + contextNeurons[i].computeContext(i);
