@@ -1,5 +1,5 @@
 #TODO list
 
-- Correct dimension errors during
-- Implemented LSTM testing on easy examples
-- Input vectors creation
+- Creation of examples for training
+- Code mutation for clone detecting and training LSTM
+
