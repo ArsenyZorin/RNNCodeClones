@@ -9,20 +9,11 @@ public class Step {
     private Matrix input = null;
     private Matrix targetOutput = null;
 
-    public Step(){}
-
     public Step(double [] input, double [] targetOutput){
         this.input = new Matrix(input);
         if(targetOutput != null)
             this.targetOutput = new Matrix(targetOutput);
     }
-
-    /*
-    @Override
-    public String toString(){
-
-    }
-    */
 
     public Matrix getInput() {
         return input;
