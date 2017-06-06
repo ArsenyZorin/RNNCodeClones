@@ -21,7 +21,7 @@ public class Layer {
 
     private Cell cell;
 
-    public Layer(/*Matrix inputWeight, */int inputAmount, int hiddenAmount/*, int outputAmount*/){
+    public Layer(int inputAmount, int hiddenAmount){
         this.inputAmount = inputAmount;
         this.hiddenAmount = hiddenAmount;
     }

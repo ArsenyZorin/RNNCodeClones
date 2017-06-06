@@ -41,7 +41,8 @@ public class Trainer {
                 res = repLosTest;
             }
 
-            System.out.println("epoch[" + (epoch + 1) + "/" + epochs + "]");
+            System.out.println("epoch[" + (epoch + 1) + "/" + epochs +
+                    "]\tlossValidation: " + repLosValid + "\tlossTest: " + repLosTest);
         }
 
         return res;
@@ -86,7 +87,8 @@ public class Trainer {
         for (Matrix matrix : network.getParams()){
             for (int i = 0; i < matrix.getArrSize(); i++){
                 double matrixBackAr = matrix.getBackArrayElem(i);
-                matrix.setCacheElem(i, matrix.getCacheElem(i) * decRate + (1 - decRate) * Math.pow(matrixBackAr, 2.0));
+                matrix.setCacheElem(i, matrix.getCacheElem(i) * decRate + (1 - decRate)
+                        * Math.pow(matrixBackAr, 2.0));
 
                 if (matrixBackAr > 0)
                     matrixBackAr = gradClipVal;
@@ -94,7 +96,8 @@ public class Trainer {
                 if (matrixBackAr < - gradClipVal)
                     matrixBackAr = - gradClipVal;
 
-                double elem = - size * matrixBackAr / Math.sqrt(matrix.getCacheElem(i) + smoothEps) - regul * matrix.getArrayElem(i);
+                double elem = - size * matrixBackAr / Math.sqrt(matrix.getCacheElem(i)
+                        + smoothEps) - regul * matrix.getArrayElem(i);
                 matrix.setArrayElem(i, matrix.getArrayElem(i) + elem);
                 matrix.setBackArrayElem(i, 0.0);
             }
