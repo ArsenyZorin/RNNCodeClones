@@ -54,8 +54,7 @@ public class TreeMutator {
             if(!tree.nodeName.contains("CODE_BLOCK"))
                 treeMutator(tree.children);
             else
-                for(ASTEntry child : tree.children)
-                    mutate(child);
+                tree = mutate(tree);
         }
         return trees;
     }
@@ -64,9 +63,46 @@ public class TreeMutator {
         Random rnd = new Random();
         int func = rnd.nextInt(2);
 
+        switch(func) {
+            case 0:
+                node = deleteNode(node);
+                break;
+            case 1:
+                node = copyNode(node);
+                break;
+            case 2:
+                break;
+            default:
+                break;
+        }
+
+
+        return node.removeSpaces(blackList);
+    }
+
+    private ASTEntry deleteNode(ASTEntry node){
+        int start = 0, end = 0;
+        for(ASTEntry child : node.children){
+            if(child.nodeName.equals("LBRACE"))
+                start = child.sourceEnd + 1;
+            if(child.nodeName.equals("RBRACE"))
+                end = child.sourceStart - 1;
+        }
+
+        Random rnd = new Random();
+        int line = rnd.nextInt((end - start) + 1) + start;
+        for (ASTEntry child : node.children){
+            if (child.sourceStart == line || child.sourceEnd == line) {
+                child.nodeName = blackList.stream().filter(p -> p.contains("WHITE")).findFirst().get();
+                break;
+            }
+        }
         return node;
     }
 
+    private ASTEntry copyNode(ASTEntry node){
+        return node;
+    }
 
     List<ASTEntry> analyzeDir(String repoPath) {
         List<ASTEntry> methods = null;
