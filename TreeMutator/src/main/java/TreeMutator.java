@@ -81,16 +81,9 @@ public class TreeMutator {
     }
 
     private ASTEntry deleteNode(ASTEntry node){
-        int start = 0, end = 0;
-        for(ASTEntry child : node.children){
-            if(child.nodeName.equals("LBRACE"))
-                start = child.sourceEnd + 1;
-            if(child.nodeName.equals("RBRACE"))
-                end = child.sourceStart - 1;
-        }
-
+        int[] pos = getStartEndMethod(node);
         Random rnd = new Random();
-        int line = rnd.nextInt((end - start) + 1) + start;
+        int line = rnd.nextInt((pos[1] - pos[0]) + 1) + pos[1];
         for (ASTEntry child : node.children){
             if (child.sourceStart == line || child.sourceEnd == line) {
                 child.nodeName = blackList.stream().filter(p -> p.contains("WHITE")).findFirst().get();
@@ -101,7 +94,41 @@ public class TreeMutator {
     }
 
     private ASTEntry copyNode(ASTEntry node){
+        int[] pos = getStartEndMethod(node);
+        Random rnd = new Random();
+        int copyLine = rnd.nextInt((pos[1] - pos[0]) + 1) + pos[1];
+        int pasteLine = rnd.nextInt((pos[1] - pos[0]) + 1) + pos[1];
+
+        ASTEntry copyNode;
+        int pasteIndex;
+        AbstractMap<Integer, Integer[]> index = new HashMap<>();
+        for(ASTEntry child : node.children){
+            index.put(node.children.indexOf(child), new Integer[]{child.sourceStart, child.sourceEnd});
+            if (child.sourceStart == copyLine || child.sourceEnd == copyLine) {
+                copyNode = child;
+                copyNode.sourceStart = pasteLine;
+                copyNode.sourceEnd = pasteLine + child.sourceEnd - child.sourceStart;
+                break;
+            }
+        }
+
+        index.forEach((k,v)->{
+            //Check all source code lines and find out index to input
+        });
+
+
         return node;
+    }
+
+    private int[] getStartEndMethod(ASTEntry node){
+        int pos[] = new int[2];
+        node.children.forEach(p->{
+            if("LBRACE".equals(p.nodeName))
+                pos[0] = p.sourceEnd;
+            if("RBRACE".equals(p.nodeName))
+                pos[1] = p.sourceStart;
+        });
+        return pos;
     }
 
     List<ASTEntry> analyzeDir(String repoPath) {
