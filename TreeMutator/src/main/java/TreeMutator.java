@@ -60,17 +60,18 @@ public class TreeMutator {
     }
 
     private ASTEntry mutate(ASTEntry node){
+        if(node.children.size() < 3)
+            return node;
+
         Random rnd = new Random();
         int func = rnd.nextInt(2);
-
+        
         switch(func) {
             case 0:
                 node = deleteNode(node);
                 break;
             case 1:
                 node = copyNode(node);
-                break;
-            case 2:
                 break;
             default:
                 break;
@@ -83,39 +84,34 @@ public class TreeMutator {
     private ASTEntry deleteNode(ASTEntry node){
         int[] pos = getStartEndMethod(node);
         Random rnd = new Random();
-        int line = rnd.nextInt((pos[1] - pos[0]) + 1) + pos[1];
-        for (ASTEntry child : node.children){
-            if (child.sourceStart == line || child.sourceEnd == line) {
-                child.nodeName = blackList.stream().filter(p -> p.contains("WHITE")).findFirst().get();
-                break;
+        int line = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        node.children.forEach(child -> {
+            if (node.children.indexOf(child) == line) {
+                child.nodeName = blackList.stream()
+                        .filter(p -> p.contains("WHITE")).findFirst().get();
             }
-        }
+        });
         return node;
     }
 
     private ASTEntry copyNode(ASTEntry node){
         int[] pos = getStartEndMethod(node);
         Random rnd = new Random();
-        int copyLine = rnd.nextInt((pos[1] - pos[0]) + 1) + pos[1];
-        int pasteLine = rnd.nextInt((pos[1] - pos[0]) + 1) + pos[1];
+        int copyLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        int pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
 
-        ASTEntry copyNode;
-        int pasteIndex;
-        AbstractMap<Integer, Integer[]> index = new HashMap<>();
+        while (pasteLine == copyLine){
+            pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        }
+
+        ASTEntry copyNode = null;
         for(ASTEntry child : node.children){
-            index.put(node.children.indexOf(child), new Integer[]{child.sourceStart, child.sourceEnd});
-            if (child.sourceStart == copyLine || child.sourceEnd == copyLine) {
-                copyNode = child;
-                copyNode.sourceStart = pasteLine;
-                copyNode.sourceEnd = pasteLine + child.sourceEnd - child.sourceStart;
+            if (node.children.indexOf(child) == copyLine) {
+                copyNode = new ASTEntry(child);
                 break;
             }
         }
-
-        index.forEach((k,v)->{
-            //Check all source code lines and find out index to input
-        });
-
+        node.children.add(pasteLine, copyNode);
 
         return node;
     }
@@ -124,9 +120,9 @@ public class TreeMutator {
         int pos[] = new int[2];
         node.children.forEach(p->{
             if("LBRACE".equals(p.nodeName))
-                pos[0] = p.sourceEnd;
+                pos[0] = node.children.indexOf(p);
             if("RBRACE".equals(p.nodeName))
-                pos[1] = p.sourceStart;
+                pos[1] = node.children.indexOf(p);
         });
         return pos;
     }
