@@ -5,6 +5,7 @@ import com.intellij.psi.impl.source.tree.LeafElement;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public class ASTEntry {
@@ -90,6 +91,69 @@ public class ASTEntry {
             spacelessText = child.appendSpacelessText(spacelessText);
         return spacelessText + text;
     }*/
+
+    public void mutate(List<String> blackList){
+        if(children.size() < 3)
+            return;
+
+        Random rnd = new Random();
+        int func = rnd.nextInt(2);
+
+        switch(func) {
+            case 0:
+                deleteNode(blackList);
+                break;
+            case 1:
+                copyNode();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void deleteNode(List<String> blackList){
+        int[] pos = getStartEndMethod();
+        Random rnd = new Random();
+        int line = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        children.forEach(child -> {
+            if (children.indexOf(child) == line) {
+                child.nodeName = blackList.stream()
+                        .filter(p -> p.contains("WHITE")).findFirst().get();
+            }
+        });
+    }
+
+    private void copyNode(){
+        int[] pos = getStartEndMethod();
+        Random rnd = new Random();
+        int copyLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        int pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+
+        while (pasteLine == copyLine){
+            pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        }
+
+        ASTEntry copyNode = null;
+        for(ASTEntry child : children){
+            if (children.indexOf(child) == copyLine) {
+                copyNode = new ASTEntry(child);
+                break;
+            }
+        }
+        children.add(pasteLine, copyNode);
+    }
+
+    private int[] getStartEndMethod(){
+        int pos[] = new int[2];
+        children.forEach(p->{
+            if("LBRACE".equals(p.nodeName))
+                pos[0] = children.indexOf(p);
+            if("RBRACE".equals(p.nodeName))
+                pos[1] = children.indexOf(p);
+        });
+        return pos;
+    }
+
 
     @Override
     public String toString() {

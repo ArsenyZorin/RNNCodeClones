@@ -54,77 +54,9 @@ public class TreeMutator {
             if(!tree.nodeName.contains("CODE_BLOCK"))
                 treeMutator(tree.children);
             else
-                tree = mutate(tree);
+                tree.mutate(blackList);// = mutate(tree);
         }
         return trees;
-    }
-
-    private ASTEntry mutate(ASTEntry node){
-        if(node.children.size() < 3)
-            return node;
-
-        Random rnd = new Random();
-        int func = rnd.nextInt(2);
-        
-        switch(func) {
-            case 0:
-                node = deleteNode(node);
-                break;
-            case 1:
-                node = copyNode(node);
-                break;
-            default:
-                break;
-        }
-
-
-        return node.removeSpaces(blackList);
-    }
-
-    private ASTEntry deleteNode(ASTEntry node){
-        int[] pos = getStartEndMethod(node);
-        Random rnd = new Random();
-        int line = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-        node.children.forEach(child -> {
-            if (node.children.indexOf(child) == line) {
-                child.nodeName = blackList.stream()
-                        .filter(p -> p.contains("WHITE")).findFirst().get();
-            }
-        });
-        return node;
-    }
-
-    private ASTEntry copyNode(ASTEntry node){
-        int[] pos = getStartEndMethod(node);
-        Random rnd = new Random();
-        int copyLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-        int pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-
-        while (pasteLine == copyLine){
-            pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-        }
-
-        ASTEntry copyNode = null;
-        for(ASTEntry child : node.children){
-            if (node.children.indexOf(child) == copyLine) {
-                copyNode = new ASTEntry(child);
-                break;
-            }
-        }
-        node.children.add(pasteLine, copyNode);
-
-        return node;
-    }
-
-    private int[] getStartEndMethod(ASTEntry node){
-        int pos[] = new int[2];
-        node.children.forEach(p->{
-            if("LBRACE".equals(p.nodeName))
-                pos[0] = node.children.indexOf(p);
-            if("RBRACE".equals(p.nodeName))
-                pos[1] = node.children.indexOf(p);
-        });
-        return pos;
     }
 
     List<ASTEntry> analyzeDir(String repoPath) {
