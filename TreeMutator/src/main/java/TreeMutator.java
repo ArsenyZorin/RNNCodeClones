@@ -43,7 +43,7 @@ public class TreeMutator {
 
         int i = 0;
         for(String file : javaFiles){
-            repoTree.add(Main.buildPSI(repoPath + file).removeSpaces(blackList).getSpacelessText());
+            repoTree.add(Main.buildPSI(repoPath + file).removeSpaces(blackList));
             System.out.println("Completed " + (++i) + " / " + javaFiles.size());
         }
         return repoTree;
@@ -54,7 +54,7 @@ public class TreeMutator {
             if(!tree.nodeName.contains("CODE_BLOCK"))
                 treeMutator(tree.children);
             else
-                tree.mutate(blackList);// = mutate(tree);
+                tree.mutate(blackList);
         }
         return trees;
     }

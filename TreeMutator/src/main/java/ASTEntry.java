@@ -81,17 +81,6 @@ public class ASTEntry {
         return this;
     }
 
-    public ASTEntry getSpacelessText(){
-        //text = appendSpacelessText(spacelessText);
-        return this;
-    }
-
-    /*private String appendSpacelessText(String spacelessText){
-        for(ASTEntry child: children)
-            spacelessText = child.appendSpacelessText(spacelessText);
-        return spacelessText + text;
-    }*/
-
     public void mutate(List<String> blackList){
         if(children.size() < 3)
             return;
@@ -153,7 +142,6 @@ public class ASTEntry {
         });
         return pos;
     }
-
 
     @Override
     public String toString() {
