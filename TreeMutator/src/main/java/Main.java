@@ -29,7 +29,7 @@ public class Main {
         System.out.println("Gateway Server Started " + port);
         List<String> blackList = getBlackList();
         List<ASTEntry> originTree = analyzeDir(args[0], blackList);
-        List<ASTEntry> mutatedTree = mutateTree(originTree);;
+        List<ASTEntry> mutatedTree = mutateTree(originTree);
 
     }
 

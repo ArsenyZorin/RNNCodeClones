@@ -13,7 +13,6 @@ public class TreeMutator {
     private static final String JAVA_EXTENSION = ".java";
     private static final String METHOD_TOKEN = "METHOD";
     private static List<String> blackList;
-    private List<ASTEntry> removeList = new ArrayList<>();
     private final PsiGen psiGenerator;
 
     public TreeMutator(final PsiGen psiGenerator) {
