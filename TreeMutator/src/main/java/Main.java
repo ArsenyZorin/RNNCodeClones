@@ -24,12 +24,21 @@ public class Main {
         if(args.length < 1)
             return;
         System.out.println(args[0]);
+        String repoPath = args[0];
         GatewayServer gatewayServer = new GatewayServer(new Main(), port);
         gatewayServer.start();
         System.out.println("Gateway Server Started " + port);
-        List<String> blackList = getBlackList();
-        List<ASTEntry> originTree = analyzeDir(args[0], blackList);
-        List<ASTEntry> mutatedTree = mutateTree(originTree);
+
+        List<String> whiteList = getAllAvailableTokens();
+        List<String> blackList = whiteList.stream()
+                .filter(p->contains(spaces, p)).collect(Collectors.toList());
+
+        System.out.println("Start analyzing repo : " + repoPath);
+        TreeMutator treeMutator = new TreeMutator(generator, blackList, whiteList);
+        List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
+
+        System.out.println("Start tree mutation:");
+        List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
 
     }
 
@@ -37,9 +46,8 @@ public class Main {
         return this;
     }
 
-    private static List<ASTEntry> analyzeDir(String repoPath, List<String> blackList) {
-        System.out.println("Start analyzing repo : " + repoPath);
-        TreeMutator analyzer = new TreeMutator(generator, blackList);
+    /*private static List<ASTEntry> analyzeDir(String repoPath, List<String> blackList) {
+
         return analyzer.analyzeDir(repoPath);
     }
 
@@ -49,14 +57,10 @@ public class Main {
         return mutator.treeMutator(tree);
     }
 
-    private static List<String> getAllAvailableTokens() {
-        return generator.getAllAvailableTokens();
-    }
-
     public static List<String> getBlackList(){
         return getAllAvailableTokens().stream()
                 .filter(p->contains(spaces, p)).collect(Collectors.toList());
-    }
+    }*/
 
     private static boolean contains(List<String> blackList, String nodeName){
         for(String blackElem : blackList)
@@ -66,6 +70,9 @@ public class Main {
         return false;
     }
 
+    private static List<String> getAllAvailableTokens() {
+        return generator.getAllAvailableTokens();
+    }
 
     public static String parsePSIText(String filename) {
         return generator.parsePSIText(filename);
