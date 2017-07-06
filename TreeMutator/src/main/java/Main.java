@@ -40,6 +40,9 @@ public class Main {
         System.out.println("Start tree mutation:");
         List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
 
+        System.out.println("Start one-hot creation for origin tree");
+        treeMutator.oneHotCreation(originTree);
+
     }
 
     public Main getMain() {
