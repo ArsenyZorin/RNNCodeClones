@@ -82,11 +82,11 @@ public class ASTEntry {
     }
 
     public void mutate(List<String> blackList){
-        if(children.size() < 3)
-            return;
-
         Random rnd = new Random();
         int func = rnd.nextInt(2);
+
+        if(children.size() < 4)
+            func = 1;
 
         switch(func) {
             case 0:
@@ -101,6 +101,7 @@ public class ASTEntry {
     }
 
     private void deleteNode(List<String> blackList){
+        System.out.println("Node deletion");
         int[] pos = getStartEndMethod();
         Random rnd = new Random();
         int line = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
@@ -113,6 +114,7 @@ public class ASTEntry {
     }
 
     private void copyNode(){
+        System.out.println("Node copy-paste");
         int[] pos = getStartEndMethod();
         Random rnd = new Random();
         int copyLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
