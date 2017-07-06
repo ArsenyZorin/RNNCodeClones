@@ -64,8 +64,15 @@ public class TreeMutator {
     }
 
     void oneHotCreation(List<ASTEntry> tree){
+        int size;
+        for (ASTEntry node : tree) {
+            size = nodesAmount(node);
+            
+        }
         
     }
+
+
 
     private List<ASTEntry> getMethodBlocks(List<ASTEntry> tree){
         List<ASTEntry> methodsList = new ArrayList<>();
@@ -87,6 +94,18 @@ public class TreeMutator {
             e.printStackTrace();
         }
         return methods;
+    }
+
+    private int nodesAmount(ASTEntry tree){
+        int amount = 0;
+        if(tree.children.size() == 0)
+            amount ++;
+
+        for(ASTEntry node : tree.children){
+            amount += nodesAmount(node);
+        }
+
+        return amount;
     }
 
 }
