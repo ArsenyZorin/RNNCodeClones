@@ -12,16 +12,19 @@ import java.util.stream.Collectors;
 public class TreeMutator {
     private static final String JAVA_EXTENSION = ".java";
     private static final String METHOD_TOKEN = "METHOD";
+    private static final String CODEBLOCK_TOKEN= "CODE_BLOCK";
     private static List<String> blackList;
+    private static List<String> whiteList;
     private final PsiGen psiGenerator;
 
     public TreeMutator(final PsiGen psiGenerator) {
         this.psiGenerator = psiGenerator;
     }
 
-    public TreeMutator(final PsiGen psiGenerator, final List<String> blackList) {
+    public TreeMutator(final PsiGen psiGenerator, final List<String> blackList, final List<String> whiteList) {
         this.psiGenerator = psiGenerator;
         this.blackList = blackList;
+        this.whiteList = whiteList;
     }
 
     private static boolean checkFileExtension(Path filePath) {
@@ -45,17 +48,35 @@ public class TreeMutator {
             repoTree.add(Main.buildPSI(repoPath + file).removeSpaces(blackList));
             System.out.println("Completed " + (++i) + " / " + javaFiles.size());
         }
-        return repoTree;
+        return getMethodBlocks(repoTree);
     }
 
-    public List<ASTEntry> treeMutator(List<ASTEntry> trees){
-        for(ASTEntry tree : trees){
-            if(!tree.nodeName.contains("CODE_BLOCK"))
-                treeMutator(tree.children);
-            else
-                tree.mutate(blackList);
+    List<ASTEntry> treeMutator(List<ASTEntry> trees){
+        List<ASTEntry> methodList = getMethodBlocks(trees);
+
+        int i = 0;
+        for(ASTEntry node : methodList) {
+            node.mutate(blackList);
+            System.out.println("Mutates completed: " + (++i) + "/" + methodList.size());
+
         }
-        return trees;
+        return methodList;
+    }
+
+    void oneHotCreation(List<ASTEntry> tree){
+        
+    }
+
+    private List<ASTEntry> getMethodBlocks(List<ASTEntry> tree){
+        List<ASTEntry> methodsList = new ArrayList<>();
+        for(ASTEntry node : tree){
+            if(!node.nodeName.contains(CODEBLOCK_TOKEN))
+                methodsList.addAll(getMethodBlocks(node.children));
+            else {
+                methodsList.add(node);
+            }
+        }
+        return methodsList;
     }
 
     List<ASTEntry> analyzeDir(String repoPath) {
