@@ -67,6 +67,7 @@ public class Embedding {
     }
 
     public void createEmbedding(List<ASTEntry> codeTokens) {
-
+        System.out.println("Embedding creation starts");
+        System.out.println("Embedding creation ends");
     }
 }

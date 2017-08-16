@@ -39,6 +39,8 @@ public class Main {
         System.out.println("Start analyzing repo : " + repoPath);
         List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
 
+        emb.createEmbedding(originTree);
+
         //System.out.println("Start tree mutation:");
         //List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
 
