@@ -3,6 +3,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.LeafElement;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -17,7 +18,6 @@ public class ASTEntry {
     public List<ASTEntry> children;
     public final boolean isTerminal;
     public String text;
-    //private String spacelessText = "";
 
     public ASTEntry(ASTEntry entry) {
         this.nodeName = entry.nodeName;
@@ -79,6 +79,42 @@ public class ASTEntry {
             child.removeSpaces(blackList);
         }
         return this;
+    }
+
+    public int getNodesAmount(){
+        int amount = 0;
+        if(children.size() == 0) {
+            amount++;
+            return amount;
+        }
+        for(ASTEntry node : children){
+            amount += node.getNodesAmount();
+        }
+        return amount;
+    }
+
+    public List<String> getAllTokensList(){
+        List<String> nodesTokens = new ArrayList<>();
+        if(children.size() == 0){
+            nodesTokens.add(nodeName);
+            return nodesTokens;
+        }
+        for(ASTEntry node : children){
+            nodesTokens.addAll(node.getAllTokensList());
+        }
+        return nodesTokens;
+    }
+
+    public String getAllTokensString(){
+        String nodesTokens = "";
+        if(children.size() == 0){
+            nodesTokens += nodeName + " ";
+            return nodesTokens;
+        }
+        for(ASTEntry node : children){
+            nodesTokens += node.getAllTokensString();
+        }
+        return nodesTokens;
     }
 
     public void mutate(List<String> blackList){
