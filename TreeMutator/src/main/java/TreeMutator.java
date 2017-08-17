@@ -1,6 +1,4 @@
-import com.intellij.psi.impl.source.SourceTreeToPsiMap;
-import com.intellij.util.containers.InternalIterator;
-
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
@@ -45,6 +43,7 @@ public class TreeMutator {
 
         int i = 0;
         for(String file : javaFiles){
+            System.out.println("File name: " + file);
             repoTree.add(Main.buildPSI(repoPath + file).removeSpaces(blackList));
             System.out.println("Completed " + (++i) + " / " + javaFiles.size());
         }
@@ -62,16 +61,6 @@ public class TreeMutator {
         }
         return methodList;
     }
-
-    void oneHotCreation(List<ASTEntry> tree){
-        int size;
-        for (ASTEntry node : tree) {
-            size = nodesAmount(node);
-            
-        }
-        
-    }
-
 
 
     private List<ASTEntry> getMethodBlocks(List<ASTEntry> tree){
@@ -95,17 +84,4 @@ public class TreeMutator {
         }
         return methods;
     }
-
-    private int nodesAmount(ASTEntry tree){
-        int amount = 0;
-        if(tree.children.size() == 0)
-            amount ++;
-
-        for(ASTEntry node : tree.children){
-            amount += nodesAmount(node);
-        }
-
-        return amount;
-    }
-
 }
