@@ -1,3 +1,4 @@
+import com.google.gson.Gson;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.bytedeco.javacv.FrameFilter;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
@@ -5,21 +6,21 @@ import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
 import org.deeplearning4j.text.sentenceiterator.CollectionSentenceIterator;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
-import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Embedding {
     Word2Vec  mainVec;
     TreeMutator treeMutator;
+    String workingDir = System.getProperty("user.dir");
 
     public Embedding(TreeMutator treeMutator) {
-        String workingDir = System.getProperty("user.dir");
         File mainEmb = new File(workingDir + "/word2Vec");
         if (mainEmb.exists()) {
             System.out.println("Tokens file was found. Reading values from it");
@@ -29,20 +30,20 @@ public class Embedding {
             this.treeMutator = treeMutator;
             String repoPath = "/home/arseny/Repos/intellij-community";
             System.out.println("Additional analysis : " + repoPath);
-            List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
-
+            List<ASTEntry> tree = treeMutator.analyzeDir(repoPath);
             List<String> treeTokens = new ArrayList<>();
+
             int i = 0;
-            for (ASTEntry tree : originTree) {
-                treeTokens.add(tree.getAllTokensString());
-                System.out.println("TokensString: " + (++i) + "/" + originTree.size());
+            for (ASTEntry token : tree){
+                treeTokens.add(token.getAllTokensString());
+                System.out.println("TokensString: " + (++i) + "/" + tree.size());
             }
 
             System.out.println(treeTokens);
             TokenizerFactory t = new DefaultTokenizerFactory();
             SentenceIterator iter = new CollectionSentenceIterator(treeTokens);
             System.out.println("Building model...");
-            Word2Vec vec = new Word2Vec.Builder()
+            mainVec = new Word2Vec.Builder()
                     .minWordFrequency(1)
                     .iterations(1)
                     .layerSize(100)
@@ -54,10 +55,10 @@ public class Embedding {
 
             System.out.println("Fitting Word2Vec model...");
 
-            vec.fit();
+            mainVec.fit();
 
             try {
-                WordVectorSerializer.writeWordVectors(vec, workingDir + "/word2Vec");
+                WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
             } catch (Exception ex) {
                 System.out.println(ex.toString());
             }
@@ -66,8 +67,39 @@ public class Embedding {
         }
     }
 
-    public void createEmbedding(List<ASTEntry> codeTokens) {
-        System.out.println("Embedding creation starts");
-        System.out.println("Embedding creation ends");
+    public void createEmbedding(List<ASTEntry> codeTokens, String embeddingTree) {
+        System.out.println("Embedding creation started");
+
+        List<List<double[]>> embeddings = new ArrayList<>();
+
+        for (ASTEntry tokenList : codeTokens) {
+            List<double[]> embed = new ArrayList<>();
+            for (String token : tokenList.getAllTokensList())
+                embed.add(mainVec.getWordVector(token));
+            embeddings.add(embed);
+        }
+
+        Gson gson = new Gson();
+
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        try {
+            fw = new FileWriter(workingDir + "/embedding" + embeddingTree);
+            bw = new BufferedWriter(fw);
+            bw.write(gson.toJson(embeddings));
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            try {
+                if (bw != null)
+                    bw.close();
+                if (fw != null)
+                    fw.close();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        System.out.println("Embedding created");
     }
 }
