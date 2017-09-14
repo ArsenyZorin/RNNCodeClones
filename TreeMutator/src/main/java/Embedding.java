@@ -21,7 +21,8 @@ public class Embedding {
     String workingDir = System.getProperty("user.dir");
 
     public Embedding(TreeMutator treeMutator) {
-        File mainEmb = new File(workingDir + "/word2Vec");
+        System.out.println(workingDir);
+        File mainEmb = new File(workingDir + "/ideaTokenization");
         if (mainEmb.exists()) {
             System.out.println("Tokens file was found. Reading values from it");
             mainVec = WordVectorSerializer.readWord2VecModel(mainEmb);
@@ -58,35 +59,54 @@ public class Embedding {
             mainVec.fit();
 
             try {
-                WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
+                WordVectorSerializer.writeWord2VecModel(mainVec, mainEmb.getPath());
+                gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/tokensWeights");ArrayList<double[]> weights = new ArrayList<>();
+
+                for(int j = 0; j < mainVec.getVocab().numWords(); j++)
+                    weights.add(mainVec.getWordVector(mainVec.getVocab().wordAtIndex(j)));
+
+                gsonSerialization(weights, workingDir + "/pretraindeWeights");
             } catch (Exception ex) {
                 System.out.println(ex.toString());
             }
 
             System.out.println("ADDITIONAL ANALYSIS COMPLETE");
         }
+        System.out.println(workingDir);
     }
 
     public void createEmbedding(List<ASTEntry> codeTokens, String embeddingTree) {
         System.out.println("Embedding creation started");
 
-        List<List<double[]>> embeddings = new ArrayList<>();
+        //List<List<double[]>> embeddings = new ArrayList<>();
+        List<List<Integer>> allIndexes = new ArrayList<>();
 
         for (ASTEntry tokenList : codeTokens) {
-            List<double[]> embed = new ArrayList<>();
+            //List<double[]> embed = new ArrayList<>();
+            List<Integer> tokenIndexes = new ArrayList<>();
             for (String token : tokenList.getAllTokensList())
-                embed.add(mainVec.getWordVector(token));
-            embeddings.add(embed);
+                //embed.add(mainVec.getWordVector(token));
+                tokenIndexes.add(mainVec.indexOf(token));
+            //embeddings.add(embed);
+            allIndexes.add(tokenIndexes);
+
         }
 
+        //gsonSerialization(embeddings, workingDir + "/embedding" + embeddingTree);
+        gsonSerialization(allIndexes, workingDir + "/indicies" + embeddingTree);
+
+        System.out.println("Embedding created");
+    }
+
+    private void gsonSerialization(Object obj, String path){
         Gson gson = new Gson();
 
         FileWriter fw = null;
         BufferedWriter bw = null;
         try {
-            fw = new FileWriter(workingDir + "/embedding" + embeddingTree);
+            fw = new FileWriter(path);
             bw = new BufferedWriter(fw);
-            bw.write(gson.toJson(embeddings));
+            bw.write(gson.toJson(obj));
         }catch (Exception e){
             e.printStackTrace();
         }finally {
@@ -99,7 +119,5 @@ public class Embedding {
                 ex.printStackTrace();
             }
         }
-
-        System.out.println("Embedding created");
     }
 }
