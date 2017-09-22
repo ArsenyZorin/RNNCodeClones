@@ -2,7 +2,9 @@ import helpers
 import numpy as np
 import tensorflow as tf
 import json
+import os
 from itertools import cycle
+from tensorflow.python.saved_model import builder as model_serialization
 
 tf.reset_default_graph()
 sess = tf.InteractiveSession()
@@ -18,7 +20,7 @@ EOS = 1
 vocab_size = weights.shape[0]
 input_embedding_size = weights.shape[1]
 
-encoder_hidden_units = 512
+encoder_hidden_units = 20
 decoder_hidden_units = encoder_hidden_units
 
 encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32, name='encoder_inputs')
@@ -68,7 +70,7 @@ sess.run(tf.global_variables_initializer())
 sess.run(embeddings.assign(weights))
 
 batch_size = 100
-batches = helpers.random_sequences(length_from=1, length_to=20,
+batches = helpers.random_sequences(length_from=1, length_to=8,
                                    vocab_lower=2, vocab_upper=vocab_size,
                                    batch_size=batch_size)
 
@@ -101,8 +103,9 @@ def next_feed():
         decoder_targets: decoder_targets_,
     }
 
+saver = tf.train.Saver()
 loss_track = []
-max_batches = 10001
+max_batches = 5001
 batches_in_epoch = 1000
 
 try:
@@ -127,7 +130,26 @@ try:
 except KeyboardInterrupt:
     print('training interrupted')
 
+directory = 'trainedModel'
+if os.path.exists(directory):
+    os.rmdir(directory)
+
+print('Exporting train model to {}'.format(directory))
+
+builder = model_serialization.SavedModelBuilder(directory)
+builder.add_meta_graph_and_variables(sess, ['TRAINING'])
+builder.save()
 
 import matplotlib.pyplot as plt
 plt.plot(loss_track)
+plt.savefig('plotfig.png')
 print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1], len(loss_track)*batch_size, batch_size))
+
+print('saved_model.loader.load')
+tf.saved_model.loader.load(sess, ['TRAINING'], directory)
+
+print('pred')
+predict_ = sess.run(decoder_prediction, fd)
+for pred in enumerate(zip(predict_.T)):
+    print(pred)
+
