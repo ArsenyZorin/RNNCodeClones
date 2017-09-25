@@ -1,4 +1,6 @@
 import numpy as np
+import tensorflow as tf
+import os
 
 def batch(inputs, max_sequence_length=None):
     """
@@ -58,3 +60,24 @@ def random_sequences(length_from, length_to,
                               size=random_length()).tolist()
             for _ in range(batch_size)
         ]
+
+
+def save_model(directory, sess):
+    if os.path.exists(directory):
+        os.rmdir(directory)
+
+    builder = tf.saved_model.builder.SavedModelBuilder(directory)
+    builder.add_meta_graph_and_variables(sess, ['TRAINING'])
+    builder.save()
+    print('Exporting train model to {}'.format(directory))
+
+
+def load_model(directory, sess):
+    if os.path.exists(directory):
+        try:
+            tf.saved_model.loader.load(sess, ['TRAINING'], directory)
+        except Exception:
+            print('Serialization load error')
+            return False, None
+        return True, sess
+    return False, None
