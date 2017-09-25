@@ -12,17 +12,14 @@ print(tf.__version__)
 weights_file = open("weights", "r")
 weights = np.array(json.loads(weights_file.read()))
 
-#PAD = 0
-#EOS = 1
-
 directory = 'trainedModel'
 
 vocab_size = weights.shape[0]
 vocab_lower = 2
 vocab_upper = vocab_size
 
-length_from = 5
-length_to = 100
+length_from = 1
+length_to = 1000
 
 batch_size = 100
 max_batches = 5000
