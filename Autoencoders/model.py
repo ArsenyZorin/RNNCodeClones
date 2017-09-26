@@ -76,17 +76,19 @@ class Seq2seq:
               vocab_upper, batch_size,
               max_batches, batches_in_epoch, directory):
 
+        batches = helpers.random_sequences(length_from=length_from, length_to=length_to,
+                                           vocab_lower=vocab_lower, vocab_upper=vocab_upper,
+                                           batch_size=batch_size)
+
         result, smth = helpers.load_model(directory, self.sess)
         if result:
             self.sess = smth
-            loss = self.sess.run(self.loss)
+            seq_batch = next(batches)
+            loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
             print('model restored from {}'.format(directory))
             print('model less: {}'.format(loss))
             return self.sess
 
-        batches = helpers.random_sequences(length_from=length_from, length_to=length_to,
-                                           vocab_lower=vocab_lower, vocab_upper=vocab_upper,
-                                           batch_size=batch_size)
         loss_track = []
         try:
             for batch in range(max_batches + 1):
@@ -119,6 +121,14 @@ class Seq2seq:
 
         except KeyboardInterrupt:
             print('training interrupted')
+
+    def get_encoder_status(self, sequence):
+        encoder_fs = []
+        for seq in sequence:
+            feed_dict = {self.encoder_inputs: [seq]}
+            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+
+        return encoder_fs
 
     def get_sess(self):
         return self.sess
