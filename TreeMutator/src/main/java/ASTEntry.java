@@ -119,10 +119,12 @@ public class ASTEntry {
 
     public void mutate(List<String> blackList){
         Random rnd = new Random();
-        int func = rnd.nextInt(2);
+        int func = rnd.nextInt(3);
 
-        if(children.size() < 4)
+        if(children.size() < 5)
             func = 1;
+        if(children.size() < 4)
+            func = 2;
 
         switch(func) {
             case 0:
