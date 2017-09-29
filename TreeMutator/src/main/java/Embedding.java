@@ -1,17 +1,16 @@
 import com.google.gson.Gson;
+import org.apache.commons.io.FileUtils;
 import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.bytedeco.javacv.FrameFilter;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
-import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
 import org.deeplearning4j.text.sentenceiterator.CollectionSentenceIterator;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.TextProgressMonitor;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +26,25 @@ public class Embedding {
             mainVec = WordVectorSerializer.readWord2VecModel(mainEmb);
             System.out.println("Successful");
         } else {
+            File cloneDir = new File("/tmp/intellij=community/");
+            try {
+                if (cloneDir.exists())
+                    FileUtils.deleteDirectory(cloneDir);
+
+                System.out.println("Clonning intellij-community repo");
+                Git.cloneRepository()
+                        .setProgressMonitor(new TextProgressMonitor(new PrintWriter(System.out)))
+                        .setURI("https://github.com/JetBrains/intellij-community.git")
+                        .setDirectory(cloneDir)
+                        .call();
+
+            } catch (Exception e){
+                System.out.println(e.getMessage());
+            }
+
             this.treeMutator = treeMutator;
-            String repoPath = "/home/arseny/Repos/intellij-community";
-            System.out.println("Additional analysis : " + repoPath);
-            List<ASTEntry> tree = treeMutator.analyzeDir(repoPath);
+            System.out.println("Additional analysis : " + cloneDir.getAbsolutePath());
+            List<ASTEntry> tree = treeMutator.analyzeDir(cloneDir.getAbsolutePath());
             List<String> treeTokens = new ArrayList<>();
 
             int i = 0;
@@ -56,6 +70,12 @@ public class Embedding {
             System.out.println("Fitting Word2Vec model...");
 
             mainVec.fit();
+
+            try {
+                FileUtils.deleteDirectory(cloneDir);
+            } catch (IOException e){
+                System.out.println(e.getMessage());
+            }
 
             try {
                 WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
