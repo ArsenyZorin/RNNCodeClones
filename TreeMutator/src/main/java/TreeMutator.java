@@ -1,3 +1,6 @@
+import org.apache.commons.io.FileUtils;
+import org.bytedeco.javacv.FrameFilter;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -44,6 +47,7 @@ public class TreeMutator {
         int i = 0;
         for(String file : javaFiles){
             System.out.println("File name: " + file);
+            changeEncoding(repoPath + file);
             repoTree.add(Main.buildPSI(repoPath + file).removeSpaces(blackList));
             System.out.println("Completed " + (++i) + " / " + javaFiles.size());
         }
@@ -62,6 +66,15 @@ public class TreeMutator {
         return methodList;
     }
 
+    private void changeEncoding(String fileName){
+        try {
+            File file = new File(fileName);
+            String content = FileUtils.readFileToString(file, "ISO8859_1");
+            FileUtils.write(file, content, "UTF-8");
+        } catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
 
     private List<ASTEntry> getMethodBlocks(List<ASTEntry> tree){
         List<ASTEntry> methodsList = new ArrayList<>();
