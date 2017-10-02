@@ -1,7 +1,3 @@
-/**
- * Created by sobol on 3/15/17.
- */
-
 //import py4j.GatewayServer;
 //import sun.rmi.server.ActivatableServerRef;
 
