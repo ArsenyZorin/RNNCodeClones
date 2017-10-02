@@ -1,41 +1,54 @@
 import com.google.gson.Gson;
+import org.apache.commons.io.FileUtils;
 import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.bytedeco.javacv.FrameFilter;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
-import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
 import org.deeplearning4j.text.sentenceiterator.CollectionSentenceIterator;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.TextProgressMonitor;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Embedding {
-    Word2Vec  mainVec;
+    Word2Vec mainVec;
     TreeMutator treeMutator;
     String workingDir = System.getProperty("user.dir");
 
     public Embedding(TreeMutator treeMutator) {
-        System.out.println(workingDir);
-        File mainEmb = new File(workingDir + "/ideaTokenization");
+        File mainEmb = new File(workingDir + "/word2Vec");
         if (mainEmb.exists()) {
             System.out.println("Tokens file was found. Reading values from it");
             mainVec = WordVectorSerializer.readWord2VecModel(mainEmb);
             System.out.println("Successful");
         } else {
+            File cloneDir = new File("/tmp/intellij-community/");
+            try {
+                if (cloneDir.exists())
+                    FileUtils.deleteDirectory(cloneDir);
+
+                System.out.println("Clonning intellij-community repo");
+                Git.cloneRepository()
+                        .setProgressMonitor(new TextProgressMonitor(new PrintWriter(System.out)))
+                        .setURI("https://github.com/JetBrains/intellij-community.git")
+                        .setDirectory(cloneDir)
+                        .call();
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+
             this.treeMutator = treeMutator;
-            String repoPath = "/home/arseny/Repos/intellij-community";
-            System.out.println("Additional analysis : " + repoPath);
-            List<ASTEntry> tree = treeMutator.analyzeDir(repoPath);
+            System.out.println("Additional analysis : " + cloneDir.getAbsolutePath());
+            List<ASTEntry> tree = treeMutator.analyzeDir(cloneDir.getAbsolutePath());
             List<String> treeTokens = new ArrayList<>();
 
             int i = 0;
-            for (ASTEntry token : tree){
+            for (ASTEntry token : tree) {
                 treeTokens.add(token.getAllTokensString());
                 System.out.println("TokensString: " + (++i) + "/" + tree.size());
             }
@@ -59,20 +72,19 @@ public class Embedding {
             mainVec.fit();
 
             try {
-                WordVectorSerializer.writeWord2VecModel(mainVec, mainEmb.getPath());
-                gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/tokensWeights");ArrayList<double[]> weights = new ArrayList<>();
+                FileUtils.deleteDirectory(cloneDir);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
 
-                for(int j = 0; j < mainVec.getVocab().numWords(); j++)
-                    weights.add(mainVec.getWordVector(mainVec.getVocab().wordAtIndex(j)));
-
-                gsonSerialization(weights, workingDir + "/pretraindeWeights");
+            try {
+                WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
             } catch (Exception ex) {
                 System.out.println(ex.toString());
             }
 
             System.out.println("ADDITIONAL ANALYSIS COMPLETE");
         }
-        System.out.println(workingDir);
     }
 
     public void createEmbedding(List<ASTEntry> codeTokens, String embeddingTree) {
@@ -98,7 +110,7 @@ public class Embedding {
         System.out.println("Embedding created");
     }
 
-    private void gsonSerialization(Object obj, String path){
+    private void gsonSerialization(Object obj, String path) {
         Gson gson = new Gson();
 
         FileWriter fw = null;
@@ -107,9 +119,9 @@ public class Embedding {
             fw = new FileWriter(path);
             bw = new BufferedWriter(fw);
             bw.write(gson.toJson(obj));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             try {
                 if (bw != null)
                     bw.close();
