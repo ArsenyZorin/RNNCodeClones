@@ -27,7 +27,7 @@ public class Embedding {
             System.out.println("Successful");
         } else {
             File cloneDir = new File("/tmp/intellij-community/");
-            try {
+            /*try {
                 if (cloneDir.exists())
                     FileUtils.deleteDirectory(cloneDir);
 
@@ -41,7 +41,7 @@ public class Embedding {
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
-
+*/
             this.treeMutator = treeMutator;
             System.out.println("Additional analysis : " + cloneDir.getAbsolutePath());
             List<ASTEntry> tree = treeMutator.analyzeDir(cloneDir.getAbsolutePath());
@@ -79,6 +79,12 @@ public class Embedding {
 
             try {
                 WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
+                gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/tokensWeight");
+                ArrayList<double[]> weights = new ArrayList<>();
+                for (int j = 0; j < mainVec.getVocab().numWords(); j++)
+                    weights.add(mainVec.getWordVector(mainVec.getVocab().wordAtIndex(j)));
+
+                gsonSerialization(weights, workingDir + "/pretrainedWeights");
             } catch (Exception ex) {
                 System.out.println(ex.toString());
             }
