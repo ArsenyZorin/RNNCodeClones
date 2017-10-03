@@ -8,7 +8,7 @@ sess = tf.InteractiveSession()
 
 print(tf.__version__)
 
-weights_file = open("weights", "r")
+weights_file = open('weights', 'r')
 weights = np.array(json.loads(weights_file.read()))
 
 directory = 'trainedModel'
@@ -38,7 +38,11 @@ model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, we
 model.train(length_from, length_to, vocab_lower, vocab_size,
      batch_size, max_batches, batches_in_epoch, directory)
 
-seq_file = open('indiciesOriginCode', 'r')
-seq = np.array(json.loads(seq_file.read()))
-encoder_states = model.get_encoder_status(seq)
+origin_seq_file = open('indiciesOriginCode', 'r')
+orig_seq = np.array(json.loads(origin_seq_file.read()))
 
+mutated_seq_file = open('indiciesMutatedCode', 'r')
+mutated_seq = np.array(json.loads(mutated_seq_file.read()))
+
+origin_encoder_states = model.get_encoder_status(orig_seq)
+mutated_encoder_states = model.get_encoder_status(mutated_seq)
