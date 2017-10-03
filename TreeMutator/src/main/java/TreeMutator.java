@@ -76,15 +76,28 @@ public class TreeMutator {
         }
     }
 
-    private List<ASTEntry> getMethodBlocks(List<ASTEntry> tree){
+    private List<ASTEntry> getMethodBlocks(List<ASTEntry> trees){
         List<ASTEntry> methodsList = new ArrayList<>();
-        for(ASTEntry node : tree){
-            if(!node.nodeName.contains(CODEBLOCK_TOKEN))
-                methodsList.addAll(getMethodBlocks(node.children));
-            else {
-                methodsList.add(node);
+        /*for(ASTEntry node : tree){
+            for (ASTEntry childNode : node.children)
+                if(childNode.nodeName.contains(METHOD_TOKEN)){
+                    for(ASTEntry child : node.children)
+                        if(child.nodeName.contains(CODEBLOCK_TOKEN))
+                            methodsList.add(child);
             }
+        }*/
+
+        for(ASTEntry tree : trees){
+            if(!tree.nodeName.contains(METHOD_TOKEN))
+                methodsList.addAll(getMethodBlocks(tree.children));
+            else
+                for(ASTEntry node : tree.children)
+                    if(node.nodeName.contains(CODEBLOCK_TOKEN)) {
+                        methodsList.add(node);
+                        break;
+                    }
         }
+
         return methodsList;
     }
 
