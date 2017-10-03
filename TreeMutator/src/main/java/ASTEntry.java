@@ -2,6 +2,7 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.editor.Document;
 import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.LeafElement;
+import org.apache.commons.lang.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -106,15 +107,16 @@ public class ASTEntry {
     }
 
     public String getAllTokensString(){
-        String nodesTokens = "";
+        StringBuilder nodesTokens = new StringBuilder("");
         if(children.size() == 0){
-            nodesTokens += nodeName + " ";
-            return nodesTokens;
+            nodesTokens.append(nodeName).append(" ");
+            return nodesTokens.toString();
         }
+
         for(ASTEntry node : children){
-            nodesTokens += node.getAllTokensString();
+            nodesTokens.append(node.getAllTokensString());
         }
-        return nodesTokens;
+        return nodesTokens.toString();
     }
 
     public void mutate(List<String> blackList){
@@ -141,35 +143,61 @@ public class ASTEntry {
     private void deleteNode(List<String> blackList){
         System.out.println("Node deletion");
         int[] pos = getStartEndMethod();
+
         Random rnd = new Random();
-        int line = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-        children.forEach(child -> {
-            if (children.indexOf(child) == line) {
-                child.nodeName = blackList.stream()
-                        .filter(p -> p.contains("WHITE")).findFirst().get();
-            }
-        });
+
+        int amountOfLines = rnd.nextInt(children.size() - 3);
+
+        for (int i = 0; i < amountOfLines; i++) {
+            int line;
+            if(pos[1] == 0)
+                line = rnd.nextInt(pos[1]) + pos[0] + 1;
+            else
+                line = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+
+            children.forEach(child -> {
+                if (children.indexOf(child) == line) {
+                    child.nodeName = blackList.stream()
+                            .filter(p -> p.contains("WHITE")).findFirst().get();
+                }
+            });
+        }
     }
 
     private void copyNode(){
         System.out.println("Node copy-paste");
         int[] pos = getStartEndMethod();
         Random rnd = new Random();
-        int copyLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-        int pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+        int amountOfLines = rnd.nextInt(children.size() - 2);
 
-        while (pasteLine == copyLine){
-            pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
-        }
+//        int[] copyLine = new int[amountOfLines];
+//        int[] pasteLine = new int[amountOfLines];
 
-        ASTEntry copyNode = null;
-        for(ASTEntry child : children){
-            if (children.indexOf(child) == copyLine) {
-                copyNode = new ASTEntry(child);
-                break;
+        for(int i = 0; i < amountOfLines; i++){
+            int copyLine;
+
+            System.out.println(pos[1]);
+            System.out.println(pos[0]);
+
+            if (pos[1] == 0)
+                copyLine = rnd.nextInt(pos[1]) + pos[0] + 1;
+            else
+                copyLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+            int pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
+
+            while (pasteLine == copyLine){
+                pasteLine = rnd.nextInt(pos[1] - 1) + pos[0] + 1;
             }
+
+            ASTEntry copyNode = null;
+            for(ASTEntry child : children){
+                if (children.indexOf(child) == copyLine) {
+                    copyNode = new ASTEntry(child);
+                    break;
+                }
+            }
+            children.add(pasteLine, copyNode);
         }
-        children.add(pasteLine, copyNode);
     }
 
     private int[] getStartEndMethod(){
@@ -180,6 +208,9 @@ public class ASTEntry {
             if("RBRACE".equals(p.nodeName))
                 pos[1] = children.indexOf(p);
         });
+
+        if(pos[1] == 0)
+            System.out.println("WTF???");
         return pos;
     }
 
