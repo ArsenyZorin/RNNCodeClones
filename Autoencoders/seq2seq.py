@@ -3,6 +3,7 @@ import tensorflow as tf
 import json
 import sys
 from model import Seq2seq
+import LSTM_python.LSTM
 
 if len(sys.argv) < 2:
     print('Invalid usage of Seq2seq script')
@@ -29,16 +30,16 @@ vocab_size = weights.shape[0]
 vocab_lower = 2
 vocab_upper = vocab_size
 
-length_from = 5
+length_from = 1
 length_to = 1000
 
 batch_size = 100
-max_batches = 1000
+max_batches = 15000
 batches_in_epoch = 100
 
 input_embedding_size = weights.shape[1]
 
-encoder_hidden_units = 20
+encoder_hidden_units = 5
 decoder_hidden_units = encoder_hidden_units
 
 
@@ -56,5 +57,11 @@ orig_seq = np.array(json.loads(origin_seq_file.read()))
 mutated_seq_file = open(sys.argv[1] + 'indiciesMutatedCode', 'r')
 mutated_seq = np.array(json.loads(mutated_seq_file.read()))
 
+nonclone_file = open('/home/arseny/Repos/RNNCodeClones/TreeMutator/indiciesNonClone', 'r')
+nonclone_seq = np.array(json.loads(nonclone_file.read()))
+
 origin_encoder_states = model.get_encoder_status(orig_seq)
 mutated_encoder_states = model.get_encoder_status(mutated_seq)
+nonclone_encoder_states = model.get_encoder_status(nonclone_seq)
+
+
