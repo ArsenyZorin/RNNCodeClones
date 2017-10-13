@@ -30,6 +30,7 @@ public class Main {
                 .filter(p->contains(spaces, p)).collect(Collectors.toList());
 
         TreeMutator treeMutator = new TreeMutator(generator, blackList, whiteList);
+        whiteList.removeAll(blackList);
         Embedding emb = new Embedding(treeMutator);
 
         System.out.println("Start analyzing repo : " + repoPath);
@@ -40,6 +41,14 @@ public class Main {
         List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
 
         emb.createEmbedding(mutatedTree, "MutatedCode");
+
+        System.out.println("NonClone Methods");
+        List<ASTEntry> nonClone = treeMutator
+                .analyzeDir("/home/arseny/mediahdd/Repos/deeplearning4j");
+        emb.createEmbedding(nonClone, "NonClone");
+
+
+
     }
 
     public Main getMain() {
