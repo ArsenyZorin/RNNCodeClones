@@ -5,9 +5,6 @@ import matplotlib.pyplot as plt
 
 class Seq2seq:
 
-    PAD = 0
-    EOS = 1
-
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
         self.encoder_cell = encoder_cell
         self.decoder_cell = decoder_cell
@@ -124,10 +121,13 @@ class Seq2seq:
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
+        i = 1
         for seq in sequence:
             feed_dict = {self.encoder_inputs: [seq]}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-
+            print('\r{}/{}'.format(i, sequence.size), end='')
+            i += 1
+        print('\n')
         return encoder_fs
 
     def get_sess(self):
