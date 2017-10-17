@@ -2,6 +2,9 @@
 //import sun.rmi.server.ActivatableServerRef;
 
 //import java.util.ArrayList;
+import arguments.Arguments;
+import com.beust.jcommander.JCommander;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,15 +18,14 @@ public class Main {
             "SPACE", "IMPLEMENTS", "EXTENDS", "THROWS",
             "PARAMETER_LIST");
 
-    public static void main(String[] args) {
-        //int port = DEFAULT_PORT;
-        if(args.length < 1)
+    public static void main(String[] argv) {
+        if(argv.length < 1)
             return;
-        System.out.println(args[0]);
-        String repoPath = args[0];
-        //GatewayServer gatewayServer = new GatewayServer(new Main(), port);
-        //gatewayServer.start();
-        //System.out.println("Gateway Server Started " + port);
+
+        Arguments args = new Arguments();
+        JCommander.newBuilder().addObject(args).build().parse(argv);
+        System.out.println(args.getInputDir());
+        String repoPath = args.getInputDir();
 
         List<String> whiteList = getAllAvailableTokens();
         List<String> blackList = whiteList.stream()
@@ -31,20 +33,21 @@ public class Main {
 
         TreeMutator treeMutator = new TreeMutator(generator, blackList, whiteList);
         whiteList.removeAll(blackList);
-        Embedding emb = new Embedding(treeMutator);
+        Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
 
         System.out.println("Start analyzing repo : " + repoPath);
         List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
         emb.createEmbedding(originTree, "OriginCode");
 
-        System.out.println("Start tree mutation:");
-        List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
-
-        emb.createEmbedding(mutatedTree, "MutatedCode");
+        if(!"eval".equals(args.getEvalType())) {
+            System.out.println("Start tree mutation:");
+            List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
+            emb.createEmbedding(mutatedTree, "MutatedCode");
+        }
 
         System.out.println("NonClone Methods");
         List<ASTEntry> nonClone = treeMutator
-                .analyzeDir("/home/arseny/mediahdd/Repos/deeplearning4j");
+                .analyzeDir("/home/arseny/deeplearning4j");
         emb.createEmbedding(nonClone, "NonClone");
 
 
