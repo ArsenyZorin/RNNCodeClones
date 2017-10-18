@@ -25,16 +25,15 @@ public class Embedding {
         if(outputDir != null)
             this.workingDir = outputDir;
         File mainEmb = new File(workingDir + "/word2Vec");
-        if(EvalType.EVAL.toString().toUpperCase().equals(evalType.toUpperCase())){
+        if(EvalType.FULL.toString().toUpperCase().equals(evalType.toUpperCase()))
+            train();
+        else
             if (mainEmb.exists()) {
                 System.out.println("Tokens file was found. Reading values from it");
                 mainVec = WordVectorSerializer.readWord2VecModel(mainEmb);
-                System.out.println("Successful");
             } else {
                 train();
             }
-        } else
-            train();
     }
 
     public void train() {
@@ -111,11 +110,10 @@ public class Embedding {
             for (String token : tokenList.getAllTokensList())
                 tokenIndexes.add(mainVec.indexOf(token));
             allIndexes.add(tokenIndexes);
-            System.out.print("\r" + codeTokens.indexOf(tokenList) + "/" + codeTokens.size());
+            System.out.print(String.format("\rEmbedding creation: %s/%s", codeTokens.indexOf(tokenList), codeTokens.size()));
         }
-
+        System.out.println();
         gsonSerialization(allIndexes, workingDir + "/indicies" + embeddingTree);
-        System.out.println("Embedding created");
     }
 
     private void gsonSerialization(Object obj, String path) {

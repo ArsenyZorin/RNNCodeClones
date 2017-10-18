@@ -140,9 +140,7 @@ public class ASTEntry {
     }
 
     private void deleteNode(List<String> blackList){
-        System.out.println("Node deletion");
         int[] pos = getStartEndMethod();
-
         Random rnd = new Random();
 
         int amountOfLines = 0;
@@ -168,19 +166,12 @@ public class ASTEntry {
     }
 
     private void copyNode(){
-        System.out.println("Node copy-paste");
         int[] pos = getStartEndMethod();
         Random rnd = new Random();
         int amountOfLines = rnd.nextInt(children.size() - 2);
 
-//        int[] copyLine = new int[amountOfLines];
-//        int[] pasteLine = new int[amountOfLines];
-
         for(int i = 0; i < amountOfLines; i++){
             int copyLine;
-
-            System.out.println(pos[1]);
-            System.out.println(pos[0]);
 
             if (pos[1] == 0)
                 copyLine = rnd.nextInt(pos[1]) + pos[0] + 1;
