@@ -34,17 +34,16 @@ vocab_upper = vocab_size
 length_from = 1
 length_to = 1000
 
-batch_size = 100
-max_batches = 1000
+batch_size = 1000
+max_batches = 10
 batches_in_epoch = 100
 
 input_embedding_size = weights.shape[1]
 
-encoder_hidden_units = 20
+layers = 5
+encoder_hidden_units = layers
 decoder_hidden_units = encoder_hidden_units
 
-
-'''Try model.py'''
 encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
 decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
@@ -61,22 +60,21 @@ mutated_seq = np.array(json.loads(mutated_seq_file.read()))
 nonclone_file = open(sys.argv[1] + 'indiciesNonClone', 'r')
 nonclone_seq = np.array(json.loads(nonclone_file.read()))
 
-origin_encoder_states = model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
-clone_encoder_states = np.append(mutated_seq, nonclone_seq)
-mutated_encoder_states = model.get_encoder_status(clone_encoder_states)
-# nonclone_encoder_states = model.get_encoder_status(nonclone_seq[:100])
-# answ = np.append(np.ones((100, 5)), np.zeros((100, 5)), axis=0)
-answ = np.append(np.ones(orig_seq.shape[0]), np.zeros(nonclone_seq.shape[0]), axis=0)
+# origin_encoder_states = model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
+# clone_encoder_states = np.append(mutated_seq, nonclone_seq)
+# answ = np.append(np.ones(orig_seq.shape[0]), np.zeros(nonclone_seq.shape[0]), axis=0)
+
+origin_encoder_states = model.get_encoder_status(orig_seq[:200])
+mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:100], nonclone_seq[:100]))
+answ = np.append(np.ones(100), np.zeros(100))
 
 
 # LSTM RNN model
 # _________________
 
-layers = 20
 lstm_model = lstm_siamese.LSTM(origin_encoder_states[0].shape[1], batch_size, layers)
 
-global_step = tf.Variable(0, name="global_step", trainable=False)
-optimizer = tf.train.AdamOptimizer(1e-3)
+# global_step = tf.Variable(0, name="global_step", trainable=False)
 print("initialized siameseModel object")
 
 # grads_and_vars = optimizer.compute_gradients(lstm_model.loss)
@@ -117,10 +115,9 @@ def train_step(x1_batch, x2_batch, y_batch, step):
             lstm_model.input_y: y_batch,
             lstm_model.dropout: 1.0,
         }
-    # _, l = sess.run([lstm_model.train_op, lstm_model.loss], feed_dict)
-    l, accuracy, dist = \
+    loss, accuracy, dist = \
         sess.run([lstm_model.loss, lstm_model.accuracy, lstm_model.distance],  feed_dict)
-    print("TRAIN: step {}, loss {:g}, acc {:g}".format(step, loss, accuracy))
+    print("TRAIN: step {}, loss {:g}".format(step, loss))
     print(y_batch, dist)
 
 
@@ -130,10 +127,6 @@ max_validation_acc = 0.0
 
 batches_size = len(batches[0])
 for nn in range(batches_size):
-    # batch = next(batches)
-    # if len(batch) < 1:
-    #    continue
-
     x1_batch = []
     x2_batch = []
     y_batch = batches[2][nn]
@@ -141,12 +134,12 @@ for nn in range(batches_size):
     size_diff = abs(batches[0][nn].shape[0] - batches[1][nn].shape[0])
 
     if batches[0][nn].shape[0] < batches[1][nn].shape[0]:
-        x1_batch = np.append(batches[0][nn], np.zeros((size_diff, 20)), axis=0)
+        x1_batch = np.append(batches[0][nn], np.zeros((size_diff, batches[0][nn].shape[1])), axis=0)
         x2_batch = batches[1][nn]
     else:
         x1_batch = batches[0][nn]
-        x2_batch = np.append(batches[1][nn], np.zeros((size_diff, 20)), axis=0)
+        x2_batch = np.append(batches[1][nn], np.zeros((size_diff, batches[1][nn].shape[1])), axis=0)
 
     train_step(x1_batch, x2_batch, y_batch, nn)
-    current_step = tf.train.global_step(sess, global_step)
-    sum_acc = 0.0
+    # current_step = tf.train.global_step(sess, global_step)
+    # sum_acc = 0.0
