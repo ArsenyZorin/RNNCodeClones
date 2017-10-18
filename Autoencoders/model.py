@@ -127,7 +127,7 @@ class Seq2seq:
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
             print('\r{}/{}'.format(i, sequence.size), end='')
             i += 1
-        print('\n')
+        print()
         return encoder_fs
 
     def get_sess(self):
