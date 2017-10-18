@@ -49,24 +49,25 @@ public class TreeMutator {
 
         //int i = 0;
         for(String file : javaFiles){
-            System.out.print(String.format("\rAnalyzing: %s/%s\tFile name: %s",
+            System.out.print(String.format("Analyzing: %s/%s\tFile name: %s",
                     javaFiles.indexOf(file), javaFiles.size(), file));
+            //System.out.print("File name: " + file);
             changeEncoding(repoPath + file);
             repoTree.add(this.psiGenerator.parseFile(repoPath + file).removeSpaces(blackList));
+            //System.out.print(String.format("\nAnalyzing: %s/%s", javaFiles.indexOf(file), javaFiles.size()));
+            System.out.print("\r\b");
         }
         return getMethodBlocks(repoTree);
     }
 
     public List<ASTEntry> treeMutator(List<ASTEntry> trees){
-        List<ASTEntry> methodList = getMethodBlocks(trees);
-
-        int i = 0;
-        for(ASTEntry node : methodList) {
+        for(ASTEntry node : trees) {
             node.mutate(blackList);
-            System.out.println("Mutates completed: " + (++i) + "/" + methodList.size());
-
+            System.out.print(String.format("Mutates completed: %s/%s", trees.indexOf(node), trees.size()));
+            System.out.print("\r\b");
         }
-        return methodList;
+        System.out.println();
+        return trees;
     }
 
     private void changeEncoding(String fileName){
@@ -81,15 +82,6 @@ public class TreeMutator {
 
     private List<ASTEntry> getMethodBlocks(List<ASTEntry> trees){
         List<ASTEntry> methodsList = new ArrayList<>();
-        /*for(trees.ASTEntry node : tree){
-            for (trees.ASTEntry childNode : node.children)
-                if(childNode.nodeName.contains(METHOD_TOKEN)){
-                    for(trees.ASTEntry child : node.children)
-                        if(child.nodeName.contains(CODEBLOCK_TOKEN))
-                            methodsList.add(child);
-            }
-        }*/
-
         for(ASTEntry tree : trees){
             if(!tree.nodeName.contains(METHOD_TOKEN))
                 methodsList.addAll(getMethodBlocks(tree.children));
