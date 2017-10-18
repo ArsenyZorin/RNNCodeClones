@@ -4,6 +4,10 @@
 //import java.util.ArrayList;
 import arguments.Arguments;
 import com.beust.jcommander.JCommander;
+import preproc.Embedding;
+import preproc.TreeMutator;
+import trees.ASTEntry;
+import trees.PsiGen;
 
 import java.util.Arrays;
 import java.util.List;
