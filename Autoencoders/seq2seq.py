@@ -34,9 +34,9 @@ vocab_upper = vocab_size
 length_from = 1
 length_to = 1000
 
-batch_size = 1000
-max_batches = 10
-batches_in_epoch = 100
+batch_size = 100
+max_batches = 15000
+batches_in_epoch = 1000
 
 input_embedding_size = weights.shape[1]
 
@@ -60,13 +60,13 @@ mutated_seq = np.array(json.loads(mutated_seq_file.read()))
 nonclone_file = open(sys.argv[1] + 'indiciesNonClone', 'r')
 nonclone_seq = np.array(json.loads(nonclone_file.read()))
 
-# origin_encoder_states = model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
-# clone_encoder_states = np.append(mutated_seq, nonclone_seq)
-# answ = np.append(np.ones(orig_seq.shape[0]), np.zeros(nonclone_seq.shape[0]), axis=0)
+origin_encoder_states = model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
+clone_encoder_states = np.append(mutated_seq, nonclone_seq)
+answ = np.append(np.ones(orig_seq.shape[0]), np.zeros(nonclone_seq.shape[0]), axis=0)
 
-origin_encoder_states = model.get_encoder_status(orig_seq[:200])
-mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:100], nonclone_seq[:100]))
-answ = np.append(np.ones(100), np.zeros(100))
+# origin_encoder_states = model.get_encoder_status(orig_seq[:200])
+# mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:100], nonclone_seq[:100]))
+# answ = np.append(np.ones(100), np.zeros(100))
 
 
 # LSTM RNN model
@@ -115,13 +115,13 @@ def train_step(x1_batch, x2_batch, y_batch, step):
             lstm_model.input_y: y_batch,
             lstm_model.dropout: 1.0,
         }
-    loss, accuracy, dist = \
-        sess.run([lstm_model.loss, lstm_model.accuracy, lstm_model.distance],  feed_dict)
+    _, loss, accuracy, dist, temp_sim = \
+        sess.run([lstm_model.train_op, lstm_model.loss, lstm_model.accuracy, lstm_model.distance, lstm_model.temp_sim],  feed_dict)
     print("TRAIN: step {}, loss {:g}".format(step, loss))
     print(y_batch, dist)
 
 
-batches = (origin_encoder_states, mutated_encoder_states, answ)
+batches = (origin_encoder_states, answ)
 ptr = 0
 max_validation_acc = 0.0
 
