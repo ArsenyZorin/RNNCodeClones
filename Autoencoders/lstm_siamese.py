@@ -38,9 +38,14 @@ class LSTM:
         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
     def get_loss(self):
-        tmp = self.input_y * tf.square(self.distance)
-        tmp2 = (1 - self.input_y) * tf.square(tf.maximum((1 - self.distance), 0))
-        return tf.reduce_mean(tmp + tmp2) / self.batch_size / 2
+        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+          labels=[self.input_y],
+          logits=[self.distance])
+
+        return tf.reduce_mean(self.stepwise_cross_entropy)
+        # tmp = self.input_y * tf.square(self.distance)
+        # tmp2 = (1 - self.input_y) * tf.square(tf.maximum((1 - self.distance), 0))
+        # return tf.reduce_mean(tmp + tmp2) / self.batch_size / 2
 
     def rnn(self, input_x, name):
 
