@@ -2,8 +2,10 @@ package arguments;
 
 import com.beust.jcommander.Parameter;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 public class Arguments {
-    @Parameter(names = {"--evaltype"}, description = "Evaluation type", required = true)
+    @Parameter(names = {"--evaltype"}, description = "Evaluation type", validateWith = EvalTypeValidator.class, required = true)
     private String evalType = "full";
 
     @Parameter(names = {"--outputDir"}, description = "Specify output dir for data saving")

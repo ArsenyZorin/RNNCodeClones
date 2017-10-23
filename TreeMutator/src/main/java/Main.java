@@ -3,12 +3,15 @@
 
 //import java.util.ArrayList;
 import arguments.Arguments;
+import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 import preproc.Embedding;
 import preproc.TreeMutator;
 import trees.ASTEntry;
 import trees.PsiGen;
 
+import javax.xml.bind.SchemaOutputResolver;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +30,13 @@ public class Main {
             return;
 
         Arguments args = new Arguments();
-        JCommander.newBuilder().addObject(args).build().parse(argv);
+        try {
+            JCommander.newBuilder().addObject(args).build().parse(argv);
+        }catch (ParameterException ex){
+            System.out.println(ex.getMessage());
+            System.out.println("For additional info type: --help or -h");
+            return;
+        }
         System.out.println(args.getInputDir());
         String repoPath = args.getInputDir();
 
