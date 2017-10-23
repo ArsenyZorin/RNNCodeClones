@@ -8,9 +8,6 @@ import java.util.Arrays;
 public class EvalTypeValidator implements IParameterValidator {
     public void validate(String name, String value) throws ParameterException{
         StringBuilder validValue = new StringBuilder();
-        if(value.isEmpty())
-            throw new ParameterException("Parameter " + name + " cannot be empty");
-
         for (EvalType type : EvalType.values()) {
             validValue.append("\n\t\t")
                     .append(type.toString().toLowerCase());
