@@ -29,8 +29,8 @@ class LSTM:
         # self.distance = tf.reshape(self.distance, [-1], name="distance")
 
     def loss_accuracy_init(self):
-        self.temp_sim = tf.subtract(tf.ones_like(self.distance),
-                                    tf.rint(self.distance), name="temp_sim")
+        self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
+                                    self.distance, name="temp_sim")
         self.correct_predictions = tf.equal(self.temp_sim, self.input_y)
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, "float"), name="accuracy")
 
@@ -38,14 +38,9 @@ class LSTM:
         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
     def get_loss(self):
-        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-          labels=[self.input_y],
-          logits=[self.distance])
-
-        return tf.reduce_mean(self.stepwise_cross_entropy)
-        # tmp = self.input_y * tf.square(self.distance)
-        # tmp2 = (1 - self.input_y) * tf.square(tf.maximum((1 - self.distance), 0))
-        # return tf.reduce_mean(tmp + tmp2) / self.batch_size / 2
+        tmp1 = (1 - self.input_y) * tf.square(self.distance)
+        tmp2 = self.input_y * tf.square(tf.maximum(0.0, 1 - self.distance))
+        return tf.add(tmp1, tmp2) / 2
 
     def rnn(self, input_x, name):
 
