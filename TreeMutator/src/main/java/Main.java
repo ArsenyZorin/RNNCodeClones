@@ -3,6 +3,7 @@
 
 //import java.util.ArrayList;
 import arguments.Arguments;
+import arguments.EvalType;
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -37,7 +38,8 @@ public class Main {
             System.out.println("For additional info type: --help or -h");
             return;
         }
-        System.out.println(args.getInputDir());
+
+        System.out.println("Analyzed dir: " + args.getInputDir());
         String repoPath = args.getInputDir();
 
         List<String> whiteList = getAllAvailableTokens();
@@ -50,19 +52,18 @@ public class Main {
 
         System.out.println("Start analyzing repo : " + repoPath);
         List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
-        emb.createEmbedding(originTree, "OriginCode");
+        emb.createEmbedding(originTree, args.getOutputDir() + "OriginCode");
 
-        if(!"eval".equals(args.getEvalType())) {
+        if(!EvalType.EVAL.toString().toLowerCase().equals(args.getEvalType())) {
             System.out.println("Start tree mutation:");
             List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
             emb.createEmbedding(mutatedTree, "MutatedCode");
+
+            System.out.println("NonClone Methods");
+            List<ASTEntry> nonClone = treeMutator
+                    .analyzeDir("/home/arseny/deeplearning4j");
+            emb.createEmbedding(nonClone, "NonClone");
         }
-
-        System.out.println("NonClone Methods");
-        List<ASTEntry> nonClone = treeMutator
-                .analyzeDir("/home/arseny/deeplearning4j");
-        emb.createEmbedding(nonClone, "NonClone");
-
 
 
     }
