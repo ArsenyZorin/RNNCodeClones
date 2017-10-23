@@ -101,7 +101,7 @@ public class Embedding {
         System.out.println("ADDITIONAL ANALYSIS COMPLETE");
     }
 
-    public void createEmbedding(List<ASTEntry> codeTokens, String embeddingTree) {
+    public void createEmbedding(List<ASTEntry> codeTokens, String savePath) {
         System.out.println("Embedding creation started");
         List<List<Integer>> allIndexes = new ArrayList<>();
 
@@ -113,7 +113,7 @@ public class Embedding {
             System.out.print(String.format("\rEmbedding creation: %s/%s", codeTokens.indexOf(tokenList), codeTokens.size()));
         }
         System.out.println();
-        gsonSerialization(allIndexes, workingDir + "/indicies" + embeddingTree);
+        gsonSerialization(allIndexes, savePath);
     }
 
     private void gsonSerialization(Object obj, String path) {
