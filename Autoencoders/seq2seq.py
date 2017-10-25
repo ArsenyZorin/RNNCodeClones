@@ -2,9 +2,9 @@ import numpy as np
 import tensorflow as tf
 import json
 import sys
-from model import Seq2seq
-from random import random
-import lstm_siamese
+from model import Seq2seq, SiameseNetwork
+# from random import random
+# import lstm_siamese
 
 if len(sys.argv) < 2:
     print('Invalid usage of Seq2seq script')
@@ -19,7 +19,7 @@ print('Arguments: {}'.format(sys.argv[1]))
 
 tf.reset_default_graph()
 # sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
-sess = tf.InteractiveSession()
+# sess = tf.InteractiveSession()
 
 print(tf.__version__)
 
@@ -36,13 +36,13 @@ length_from = 1
 length_to = 1000
 
 batch_size = 100
-max_batches = 1000 # 20000
+max_batches = 20000
 batches_in_epoch = 1000
 
 input_embedding_size = weights.shape[1]
 
-layers = 20
-encoder_hidden_units = 20
+layers = 5
+encoder_hidden_units = layers
 decoder_hidden_units = encoder_hidden_units
 
 encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
@@ -73,6 +73,7 @@ eval_nonclone = np.array(json.loads(eval_nonclone_file.read()))
 # mutated_encoder_states = np.append(mutated_seq, nonclone_seq)
 # answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
+
 origin_encoder_states = model.get_encoder_status(orig_seq[:30000])
 mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:20000], nonclone_seq[:10000]))
 answ = np.append(np.zeros(20000), np.ones(10000), axis=0)
@@ -91,15 +92,17 @@ print(len(answ))
 # LSTM RNN model
 # _________________
 
-lstm_model = lstm_siamese.LSTM(origin_encoder_states[0].shape[1], batch_size, layers)
+# lstm_model = lstm_siamese.LSTM(origin_encoder_states[0].shape[1], batch_size, layers)
+lstm_model = SiameseNetwork(origin_encoder_states[0].shape[1], batch_size, layers) # lstm_siamese.LSTM(origin_encoder_states[0].shape[1], batch_size, layers)
+lstm_model.train(origin_encoder_states, mutated_encoder_states, answ)
 
-loss_summary = tf.summary.scalar("loss", lstm_model.loss)
-acc_summary = tf.summary.scalar("accuracy", lstm_model.accuracy)
+# loss_summary = tf.summary.scalar("loss", lstm_model.loss)
+# acc_summary = tf.summary.scalar("accuracy", lstm_model.accuracy)
 
-sess.run(tf.global_variables_initializer())
+# sess.run(tf.global_variables_initializer())
 
 
-def train_step(x1_batch, x2_batch, y_batch, step):
+'''def train_step(x1_batch, x2_batch, y_batch, step):
     """
     A single training step
     """
@@ -108,70 +111,69 @@ def train_step(x1_batch, x2_batch, y_batch, step):
             lstm_model.input_x1: x1_batch,
             lstm_model.input_x2: x2_batch,
             lstm_model.input_y: y_batch,
-            lstm_model.dropout: 1.0,
         }
     else:
         feed_dict = {
             lstm_model.input_x1: x2_batch,
             lstm_model.input_x2: x1_batch,
             lstm_model.input_y: y_batch,
-            lstm_model.dropout: 1.0,
         }
     _, loss, dist, temp_sim = \
         sess.run([lstm_model.train_op, lstm_model.loss, lstm_model.distance, lstm_model.temp_sim],  feed_dict)
     print("TRAIN: step {}, loss {:g}".format(step, loss))
     print(y_batch, dist, temp_sim)
+'''
 
+# data = np.asarray(list(zip(origin_encoder_states, mutated_encoder_states, answ)))
+# data_size = data.shape[0]
+# batch_inds = np.random.permutation(data_size)
+# batches = data[batch_inds]
+# batches = (origin_encoder_states, mutated_encoder_states, answ)
+# batches =
+# ptr = 0
+# max_validation_acc = 0.0
 
-data = np.asarray(list(zip(origin_encoder_states, mutated_encoder_states, answ)))
-data_size = data.shape[0]
-batch_inds = np.random.permutation(data_size)
-batches = data[batch_inds]
-#batches = (origin_encoder_states, mutated_encoder_states, answ)
-ptr = 0
-max_validation_acc = 0.0
-
-print(data_size)
-for nn in range(data_size):
-    x1_batch = []
-    x2_batch = []
-    y_batch = batches[nn][2]
+# print(data_size)
+# for nn in range(data_size):
+#    x1_batch = []
+#    x2_batch = []
+#    y_batch = batches[nn][2]
 
     # size_diff = abs(len(batches[0][nn]) - len(batches[1][nn]))
-    size_diff = abs(batches[nn][0].shape[0] - batches[nn][1].shape[0])
+#    size_diff = abs(batches[nn][0].shape[0] - batches[nn][1].shape[0])
 
-    if batches[nn][0].shape[0] < batches[nn][1].shape[0]:
-        x1_batch = np.append(batches[nn][0], np.zeros((size_diff, batches[nn][0].shape[1])), axis=0)
-        x2_batch = batches[nn][1]
-    else:
-        x1_batch = batches[nn][0]
-        x2_batch = np.append(batches[nn][1], np.zeros((size_diff, batches[nn][1].shape[1])), axis=0)
+#    if batches[nn][0].shape[0] < batches[nn][1].shape[0]:
+#        x1_batch = np.append(batches[nn][0], np.zeros((size_diff, batches[nn][0].shape[1])), axis=0)
+#        x2_batch = batches[nn][1]
+#    else:
+#        x1_batch = batches[nn][0]
+#        x2_batch = np.append(batches[nn][1], np.zeros((size_diff, batches[nn][1].shape[1])), axis=0)
 
-    train_step(x1_batch, x2_batch, y_batch, nn)
+#    train_step(x1_batch, x2_batch, y_batch, nn)
     # current_step = tf.train.global_step(sess, global_step)
     # sum_acc = 0.0
 
-eval_data = np.asarray(list(zip(eval_orig_encoder_states, eval_clone_encoder_states)))
-data_size = data.shape[0]
-batch_inds = np.random.permutation(data_size)
-eval_batches = data[batch_inds]
-for nn in range(eval_batches.shape[0]):
-    x1_batch = []
-    x2_batch = []
-    size_diff = abs(eval_batches[nn][0].shape[0] - len(eval_batches[nn][1]))
+# eval_data = np.asarray(list(zip(eval_orig_encoder_states, eval_clone_encoder_states)))
+# data_size = data.shape[0]
+# batch_inds = np.random.permutation(data_size)
+# eval_batches = data[batch_inds]
+# for nn in range(eval_batches.shape[0]):
+#     x1_batch = []
+#    x2_batch = []
+#    size_diff = abs(eval_batches[nn][0].shape[0] - len(eval_batches[nn][1]))
 
-    if eval_batches[nn][0].shape[0] < eval_batches[nn][1].shape[0]:
-        x1_batch = np.append(eval_batches[nn][0], np.zeros((size_diff, eval_batches[nn][0].shape[1])), axis=0)
-        x2_batch = eval_batches[nn][1]
-    else:
-        x1_batch = eval_batches[nn][0]
-        x2_batch = np.append(eval_batches[nn][1], np.zeros((size_diff, eval_batches[nn][1].shape[1])), axis=0)
+#    if eval_batches[nn][0].shape[0] < eval_batches[nn][1].shape[0]:
+#        x1_batch = np.append(eval_batches[nn][0], np.zeros((size_diff, eval_batches[nn][0].shape[1])), axis=0)
+#        x2_batch = eval_batches[nn][1]
+#    else:
+#        x1_batch = eval_batches[nn][0]
+#        x2_batch = np.append(eval_batches[nn][1], np.zeros((size_diff, eval_batches[nn][1].shape[1])), axis=0)
 
-    feed_dict = {
-            lstm_model.input_x1: x1_batch,
-            lstm_model.input_x2: x2_batch,
-        }
-    dist, sim = sess.run([lstm_model.distance, lstm_model.temp_sim], feed_dict)
-    print("EVAL: step {}".format(nn))
-    print(dist, sim)
+#    feed_dict = {
+#            lstm_model.input_x1: x1_batch,
+#            lstm_model.input_x2: x2_batch,
+#        }
+#    dist, sim = sess.run([lstm_model.distance, lstm_model.temp_sim], feed_dict)
+#    print("EVAL: step {}".format(nn))
+#    print(dist, sim)
 
