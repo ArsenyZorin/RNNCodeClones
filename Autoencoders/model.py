@@ -1,6 +1,7 @@
 import helpers
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from random import random
 
 
 class Seq2seq:
@@ -10,7 +11,7 @@ class Seq2seq:
         self.decoder_cell = decoder_cell
         self.vocab_size = vocab_size
         self.input_embedding_size = input_embedding_size
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
         self.weights = weights
         self.create_model()
 
@@ -132,5 +133,104 @@ class Seq2seq:
 
     def get_sess(self):
         return self.sess
+
+
+class SiameseNetwork:
+    def __init__(self, sequence_length, batch_size, layers):
+        self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
+        self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
+        self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
+
+        self.sequence_length = sequence_length
+        self.batch_size = batch_size
+        self.layers = layers
+        self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+
+        self.init_out()
+        self.loss_accuracy_init()
+
+    def init_out(self):
+        self.out1 = self.rnn(self.input_x1, 'method1')
+        self.out2 = self.rnn(self.input_x2, 'method2')
+        self.distance = tf.sqrt(tf.reduce_sum(
+            tf.square(tf.subtract(self.out1, self.out2))))
+        self.distance = tf.div(self.distance,
+                               tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
+                                      tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
+
+    def loss_accuracy_init(self):
+        self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
+                                    self.distance, name="temp_sim")
+        self.correct_predictions = tf.equal(self.temp_sim, self.input_y)
+        self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, "float"), name="accuracy")
+
+        self.loss = self.get_loss()
+        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+
+    def get_loss(self):
+        tmp1 = (1 - self.input_y) * tf.square(self.distance)
+        tmp2 = self.input_y * tf.square(tf.maximum(0.0, 1 - self.distance))
+        return tf.add(tmp1, tmp2) / 2
+
+    def rnn(self, input_x, name):
+        with tf.name_scope('fw' + name), tf.variable_scope('fw' + name):
+            stacked_rnn_fw = []
+            for _ in range(self.layers):
+                fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.layers, forget_bias=1.0, state_is_tuple=True)
+                stacked_rnn_fw.append(fw_cell)
+            lstm_fw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_fw, state_is_tuple=True)
+
+        with tf.name_scope('bw' + name), tf.variable_scope('bw' + name):
+            stacked_rnn_bw = []
+            for _ in range(self.layers):
+                bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.layers, forget_bias=1.0, state_is_tuple=True)
+                stacked_rnn_bw.append(bw_cell)
+            lstm_bw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_bw, state_is_tuple=True)
+
+        with tf.name_scope('bw' + name), tf.variable_scope('bw' + name):
+            outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell_m, lstm_bw_cell_m, [input_x], dtype=tf.float32)
+        return outputs
+
+    def dict_feed(self, x1_batch, x2_batch, y_batch, step):
+        if random() > 0.5:
+            feed_dict = {
+                self.input_x1: x1_batch,
+                self.input_x2: x2_batch,
+                self.input_y: y_batch,
+            }
+        else:
+            feed_dict = {
+                self.input_x1: x2_batch,
+                self.input_x2: x1_batch,
+                self.input_y: y_batch,
+            }
+        _, loss, dist, temp_sim = \
+            self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
+        print("TRAIN: step {}, loss {:g}".format(step, loss))
+        print(y_batch, dist, temp_sim)
+
+    def train(self, input_x1, input_x2, input_y):
+        self.sess.run(tf.global_variables_initializer())
+
+        batches = helpers.siam_batches(input_x1, input_x2, input_y)
+        data_size = batches.shape[0]
+
+        print(data_size)
+        for nn in range(data_size):
+            x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
+            y_batch = batches[nn][2]
+
+            # size_diff = abs(len(batches[0][nn]) - len(batches[1][nn]))
+            # size_diff = abs(batches[nn][0].shape[0] - batches[nn][1].shape[0])
+
+            # if batches[nn][0].shape[0] < batches[nn][1].shape[0]:
+            #    x1_batch = np.append(batches[nn][0], np.zeros((size_diff, batches[nn][0].shape[1])), axis=0)
+            #    x2_batch = batches[nn][1]
+            # else:
+            #    x1_batch = batches[nn][0]
+            #    x2_batch = np.append(batches[nn][1], np.zeros((size_diff, batches[nn][1].shape[1])), axis=0)
+
+            self.dict_feed(x1_batch, x2_batch, y_batch, nn)
+
 
 
