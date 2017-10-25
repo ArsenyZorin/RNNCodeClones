@@ -1,6 +1,7 @@
 package preproc;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.ObjectUtils;
 import trees.ASTEntry;
 import trees.PsiGen;
 
@@ -47,14 +48,17 @@ public class TreeMutator {
                 .map(s -> s.replace(repoPath, ""))
                 .collect(Collectors.toList());
 
-        //int i = 0;
         for(String file : javaFiles){
             System.out.print(String.format("Analyzing: %s/%s\tFile name: %s",
                     javaFiles.indexOf(file), javaFiles.size(), file));
-            //System.out.print("File name: " + file);
-            changeEncoding(repoPath + file);
-            repoTree.add(this.psiGenerator.parseFile(repoPath + file).removeSpaces(blackList));
-            //System.out.print(String.format("\nAnalyzing: %s/%s", javaFiles.indexOf(file), javaFiles.size()));
+            //changeEncoding(repoPath + file);
+            ASTEntry tree;
+            try {
+                tree = this.psiGenerator.parseFile(repoPath + file).removeSpaces(blackList);
+            } catch (NullPointerException ex){
+                continue;
+            }
+            repoTree.add(tree);
             System.out.print("\r\b");
         }
         return getMethodBlocks(repoTree);
