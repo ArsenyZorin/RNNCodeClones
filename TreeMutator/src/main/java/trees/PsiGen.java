@@ -22,7 +22,9 @@ import com.intellij.psi.impl.PsiTreeChangePreprocessor;
 import com.intellij.psi.impl.source.tree.ElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -85,7 +87,7 @@ public class PsiGen {
         return Stream.of(et).map(IElementType::toString).collect(Collectors.toList());
     }
 
-    private void checkTokens(List<String> tokens, ASTEntry node) {
+   /* private void checkTokens(List<String> tokens, ASTEntry node) {
 
         if (!tokens.contains(node.nodeName)) {
             System.out.println(node.nodeName);
@@ -94,7 +96,7 @@ public class PsiGen {
             checkTokens(tokens, child);
         }
 
-    }
+    }*/
 
     private void fillFile(ASTEntry root, Map<Integer, String> file) {
         file.merge(root.sourceStart, root.nodeName, (v, s) -> v.concat(" " + s));
@@ -154,9 +156,12 @@ public class PsiGen {
 
     public ASTEntry parseFile(String filename) {
         try {
-            return convert(parse(String.join("\n", Files.readAllLines(Paths.get(filename)))));
+            return convert(parse(String.join("\n", FileUtils.readFileToString(new File(filename), "UTF-8")))); //Files.readAllLines(Paths.get(filename)))));
         } catch (IOException e) {
+            System.out.println();
             e.printStackTrace();
+            return null;
+        } catch (AssertionError ex){
             return null;
         }
     }
