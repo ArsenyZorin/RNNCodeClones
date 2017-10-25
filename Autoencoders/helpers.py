@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
+
 def batch(inputs, max_sequence_length=None):
     """
     Args:
@@ -36,6 +37,25 @@ def batch(inputs, max_sequence_length=None):
     inputs_time_major = inputs_batch_major.swapaxes(0, 1)
 
     return inputs_time_major, sequence_lengths
+
+
+def siam_batches(x1, x2, x3):
+    data = np.asarray(list(zip(x1, x2, x3)))
+    data_size = data.shape[0]
+    batch_inds = np.random.permutation(data_size)
+    return data[batch_inds]
+
+
+def shape_diff(x1, x2):
+    size_diff = abs(x1.shape[0] - x2.shape[0])
+
+    if x1.shape[0] < x2.shape[0]:
+        x1_batch = np.append(x1, np.zeros((size_diff, x1.shape[1])), axis=0)
+        x2_batch = x2
+    else:
+        x1_batch = x1
+        x2_batch = np.append(x2, np.zeros((size_diff, x2.shape[1])), axis=0)
+    return x1_batch, x2_batch
 
 
 def random_sequences(length_from, length_to,
