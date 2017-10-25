@@ -148,6 +148,7 @@ class SiameseNetwork:
 
         self.init_out()
         self.loss_accuracy_init()
+        self.sess.run(tf.global_variables_initializer())
 
     def init_out(self):
         self.out1 = self.rnn(self.input_x1, 'method1')
@@ -191,7 +192,7 @@ class SiameseNetwork:
             outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell_m, lstm_bw_cell_m, [input_x], dtype=tf.float32)
         return outputs
 
-    def dict_feed(self, x1_batch, x2_batch, y_batch, step):
+    def dict_feed(self, x1_batch, x2_batch, y_batch=None):
         if random() > 0.5:
             feed_dict = {
                 self.input_x1: x1_batch,
@@ -204,14 +205,9 @@ class SiameseNetwork:
                 self.input_x2: x1_batch,
                 self.input_y: y_batch,
             }
-        _, loss, dist, temp_sim = \
-            self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
-        print("TRAIN: step {}, loss {:g}".format(step, loss))
-        print(y_batch, dist, temp_sim)
+        return feed_dict
 
     def train(self, input_x1, input_x2, input_y):
-        self.sess.run(tf.global_variables_initializer())
-
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
 
@@ -220,17 +216,24 @@ class SiameseNetwork:
             x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
             y_batch = batches[nn][2]
 
-            # size_diff = abs(len(batches[0][nn]) - len(batches[1][nn]))
-            # size_diff = abs(batches[nn][0].shape[0] - batches[nn][1].shape[0])
+            feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
+            _, loss, dist, temp_sim = \
+                self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
+            print("TRAIN: step {}, loss {:g}".format(nn, loss))
+            print(y_batch, dist, temp_sim)
 
-            # if batches[nn][0].shape[0] < batches[nn][1].shape[0]:
-            #    x1_batch = np.append(batches[nn][0], np.zeros((size_diff, batches[nn][0].shape[1])), axis=0)
-            #    x2_batch = batches[nn][1]
-            # else:
-            #    x1_batch = batches[nn][0]
-            #    x2_batch = np.append(batches[nn][1], np.zeros((size_diff, batches[nn][1].shape[1])), axis=0)
+    def eval(self, input_x1, input_x2):
+        eval_batches = helpers.siam_batches(input_x1, input_x2)
+        data_size = eval_batches.shape[0]
 
-            self.dict_feed(x1_batch, x2_batch, y_batch, nn)
+        print(data_size)
+        for nn in range(data_size):
+            x1_batch, x2_batch = helpers.shape_diff(eval_batches[nn][0], eval_batches[nn][1])
+
+            feed_dict = self.dict_feed(x1_batch, x2_batch)
+            dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+            print("EVAL: step {}".format(nn))
+            print(dist)
 
 
 
