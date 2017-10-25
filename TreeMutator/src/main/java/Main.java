@@ -1,10 +1,6 @@
-//import py4j.GatewayServer;
-//import sun.rmi.server.ActivatableServerRef;
-
-//import java.util.ArrayList;
 import arguments.Arguments;
 import arguments.EvalType;
-import com.beust.jcommander.IParameterValidator;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import preproc.Embedding;
@@ -12,12 +8,9 @@ import preproc.TreeMutator;
 import trees.ASTEntry;
 import trees.PsiGen;
 
-import javax.xml.bind.SchemaOutputResolver;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-//import static py4j.GatewayServer.DEFAULT_PORT;
 
 public class Main {
     private final static PsiGen generator = new PsiGen();
@@ -50,22 +43,35 @@ public class Main {
         whiteList.removeAll(blackList);
         Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
 
-        System.out.println("Start analyzing repo : " + repoPath);
-        List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
-        emb.createEmbedding(originTree, args.getOutputDir() + "OriginCode");
+        if(!EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
+            System.out.println("Start analyzing repo : " + repoPath);
+            List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
+            emb.createEmbedding(originTree, args.getOutputDir() + "/OriginCode");
 
-        if(!EvalType.EVAL.toString().toLowerCase().equals(args.getEvalType())) {
+            if (!EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
+                System.out.println("Start tree mutation:");
+                List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
+                emb.createEmbedding(mutatedTree, args.getOutputDir() + "/MutatedCode");
+
+                System.out.println("NonClone Methods");
+                List<ASTEntry> nonClone = treeMutator
+                        .analyzeDir("/home/arseny/deeplearning4j");
+                emb.createEmbedding(nonClone, args.getOutputDir() + "/NonClone");
+            }
+        } else {
+            System.out.println("Start analyzing repo : " + repoPath);
+            List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
+            emb.createEmbedding(originTree, args.getOutputDir() + "/EvalCode");
+
             System.out.println("Start tree mutation:");
             List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
-            emb.createEmbedding(mutatedTree, "MutatedCode");
+            emb.createEmbedding(mutatedTree, args.getOutputDir() +"/EvalMutatedCode");
 
             System.out.println("NonClone Methods");
             List<ASTEntry> nonClone = treeMutator
-                    .analyzeDir("/home/arseny/deeplearning4j");
-            emb.createEmbedding(nonClone, "NonClone");
+                    .analyzeDir("/home/arseny/evals/jdbc");
+            emb.createEmbedding(nonClone, args.getOutputDir() + "/EvalNonClone");
         }
-
-
     }
 
     public Main getMain() {
