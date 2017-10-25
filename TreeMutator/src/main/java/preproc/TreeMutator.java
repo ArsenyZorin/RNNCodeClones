@@ -51,7 +51,6 @@ public class TreeMutator {
         for(String file : javaFiles){
             System.out.print(String.format("Analyzing: %s/%s\tFile name: %s",
                     javaFiles.indexOf(file), javaFiles.size(), file));
-            //changeEncoding(repoPath + file);
             ASTEntry tree;
             try {
                 tree = this.psiGenerator.parseFile(repoPath + file).removeSpaces(blackList);
@@ -72,16 +71,6 @@ public class TreeMutator {
         }
         System.out.println();
         return trees;
-    }
-
-    private void changeEncoding(String fileName){
-        try {
-            File file = new File(fileName);
-            String content = FileUtils.readFileToString(file, "ISO8859_1");
-            FileUtils.write(file, content, "UTF-8");
-        } catch (Exception e){
-            System.out.println(e.getMessage());
-        }
     }
 
     private List<ASTEntry> getMethodBlocks(List<ASTEntry> trees){
