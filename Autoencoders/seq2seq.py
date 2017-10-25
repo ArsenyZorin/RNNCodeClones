@@ -36,13 +36,13 @@ length_from = 1
 length_to = 1000
 
 batch_size = 100
-max_batches = 20000
+max_batches = 1000 # 20000
 batches_in_epoch = 1000
 
 input_embedding_size = weights.shape[1]
 
 layers = 20
-encoder_hidden_units = 5
+encoder_hidden_units = 20
 decoder_hidden_units = encoder_hidden_units
 
 encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
@@ -123,42 +123,49 @@ def train_step(x1_batch, x2_batch, y_batch, step):
     print(y_batch, dist, temp_sim)
 
 
-batches = (origin_encoder_states, mutated_encoder_states, answ)
+data = np.asarray(list(zip(origin_encoder_states, mutated_encoder_states, answ)))
+data_size = data.shape[0]
+batch_inds = np.random.permutation(data_size)
+batches = data[batch_inds]
+#batches = (origin_encoder_states, mutated_encoder_states, answ)
 ptr = 0
 max_validation_acc = 0.0
 
-batches_size = len(batches[0])
-print(batches_size)
-for nn in range(batches_size):
+print(data_size)
+for nn in range(data_size):
     x1_batch = []
     x2_batch = []
-    y_batch = batches[2][nn]
+    y_batch = batches[nn][2]
 
-    size_diff = abs(len(batches[0][nn]) - len(batches[1][nn]))
+    # size_diff = abs(len(batches[0][nn]) - len(batches[1][nn]))
+    size_diff = abs(batches[nn][0].shape[0] - batches[nn][1].shape[0])
 
-    if len(batches[0][nn]) < len(batches[1][nn]):
-        x1_batch = np.append(batches[0][nn], np.zeros((size_diff, batches[0][nn].shape[1])), axis=0)
-        x2_batch = batches[1][nn]
+    if batches[nn][0].shape[0] < batches[nn][1].shape[0]:
+        x1_batch = np.append(batches[nn][0], np.zeros((size_diff, batches[nn][0].shape[1])), axis=0)
+        x2_batch = batches[nn][1]
     else:
-        x1_batch = batches[0][nn]
-        x2_batch = np.append(batches[1][nn], np.zeros((size_diff, batches[1][nn].shape[1])), axis=0)
+        x1_batch = batches[nn][0]
+        x2_batch = np.append(batches[nn][1], np.zeros((size_diff, batches[nn][1].shape[1])), axis=0)
 
     train_step(x1_batch, x2_batch, y_batch, nn)
     # current_step = tf.train.global_step(sess, global_step)
     # sum_acc = 0.0
 
-eval_batches = (eval_orig_encoder_states, eval_clone_encoder_states)
-for nn in range(len(eval_batches[0])):
+eval_data = np.asarray(list(zip(eval_orig_encoder_states, eval_clone_encoder_states)))
+data_size = data.shape[0]
+batch_inds = np.random.permutation(data_size)
+eval_batches = data[batch_inds]
+for nn in range(eval_batches.shape[0]):
     x1_batch = []
     x2_batch = []
-    size_diff = abs(len(eval_batches[0][nn]) - len(eval_batches[1][nn]))
+    size_diff = abs(eval_batches[nn][0].shape[0] - len(eval_batches[nn][1]))
 
-    if len(eval_batches[0][nn]) < len(eval_batches[1][nn]):
-        x1_batch = np.append(batches[0][nn], np.zeros((size_diff, eval_batches[0][nn].shape[1])), axis=0)
-        x2_batch = eval_batches[1][nn]
+    if eval_batches[nn][0].shape[0] < eval_batches[nn][1].shape[0]:
+        x1_batch = np.append(eval_batches[nn][0], np.zeros((size_diff, eval_batches[nn][0].shape[1])), axis=0)
+        x2_batch = eval_batches[nn][1]
     else:
-        x1_batch = eval_batches[0][nn]
-        x2_batch = np.append(eval_batches[1][nn], np.zeros((size_diff, eval_batches[1][nn].shape[1])), axis=0)
+        x1_batch = eval_batches[nn][0]
+        x2_batch = np.append(eval_batches[nn][1], np.zeros((size_diff, eval_batches[nn][1].shape[1])), axis=0)
 
     feed_dict = {
             lstm_model.input_x1: x1_batch,
