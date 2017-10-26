@@ -3,11 +3,16 @@ import arguments.EvalType;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import org.bytedeco.javacpp.presets.opencv_core;
 import preproc.Embedding;
 import preproc.TreeMutator;
 import trees.ASTEntry;
 import trees.PsiGen;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,17 +51,17 @@ public class Main {
         if(!EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
             System.out.println("Start analyzing repo : " + repoPath);
             List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
-            emb.createEmbedding(originTree, args.getOutputDir() + "/OriginCode");
+            emb.createEmbedding(originTree, args.getOutputDir() + "/indiciesOriginCode");
 
             if (!EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
                 System.out.println("Start tree mutation:");
                 List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
-                emb.createEmbedding(mutatedTree, args.getOutputDir() + "/MutatedCode");
+                emb.createEmbedding(mutatedTree, args.getOutputDir() + "/indiciesMutatedCode");
 
                 System.out.println("NonClone Methods");
                 List<ASTEntry> nonClone = treeMutator
                         .analyzeDir("/home/arseny/deeplearning4j");
-                emb.createEmbedding(nonClone, args.getOutputDir() + "/NonClone");
+                emb.createEmbedding(nonClone, args.getOutputDir() + "/indiciesNonClone");
             }
         } else {
             System.out.println("Start analyzing repo : " + repoPath);
@@ -72,6 +77,9 @@ public class Main {
                     .analyzeDir("/home/arseny/evals/jdbc");
             emb.createEmbedding(nonClone, args.getOutputDir() + "/EvalNonClone");
         }
+
+        pythonExec("../Autoencoders/clonesRecognition.py", args.getOutputDir());
+
     }
 
     public Main getMain() {
@@ -96,5 +104,35 @@ public class Main {
 
     public static ASTEntry buildPSI(String filename) {
         return generator.parseFile(filename);
+    }
+
+    private static void pythonExec(String pythonCode, String args){
+        try {
+            Runtime rt = Runtime.getRuntime();
+            String[] cmds = {"python", pythonCode, args}; //"/home/arseny/Repos/RNNCodeClones/Autoencoders/seq2seq.py", "/home/arseny/Repos/RNNCodeClones/data/"};
+            /*List<String> cmdss = new ArrayList<>();
+            cmdss.add("python");
+            cmdss.addAll(args);
+
+            String[] cmds = new String[cmdss.size()];
+            cmds = cmdss.toArray(cmds);*/
+
+            Process proc = rt.exec(cmds);
+
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+            System.out.println("Output:");
+            String s = null;
+
+            while ((s = stdInput.readLine()) != null)
+                System.out.println(s);
+
+            while ((s=stdError.readLine()) != null)
+                System.out.println(s);
+
+        } catch (IOException ex){
+            ex.printStackTrace();
+        }
     }
 }
