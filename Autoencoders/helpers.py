@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import os
+from itertools import zip_longest
 
 
 def batch(inputs, max_sequence_length=None):
@@ -33,14 +34,16 @@ def batch(inputs, max_sequence_length=None):
         for j, element in enumerate(seq):
             inputs_batch_major[i, j] = element
 
-    # [batch_size, max_time] -> [max_time, batch_size]
     inputs_time_major = inputs_batch_major.swapaxes(0, 1)
-
     return inputs_time_major, sequence_lengths
 
 
-def siam_batches(x1, x2, x3):
-    data = np.asarray(list(zip(x1, x2, x3)))
+def siam_batches(x1, x2, x3=None):
+    if x3 is not None:
+        data = np.asarray(list(zip(x1, x2, x3)))
+    else:
+        data = np.array(list(zip(x1, x2)))
+
     data_size = data.shape[0]
     batch_inds = np.random.permutation(data_size)
     return data[batch_inds]
@@ -82,20 +85,20 @@ def random_sequences(length_from, length_to,
         ]
 
 
-def save_model(directory, sess):
+def save_model(directory, name, sess):
     if os.path.exists(directory):
         os.rmdir(directory)
 
     builder = tf.saved_model.builder.SavedModelBuilder(directory)
-    builder.add_meta_graph_and_variables(sess, ['TRAINING'])
+    builder.add_meta_graph_and_variables(sess, [name])
     builder.save()
     print('Exporting train model to {}'.format(directory))
 
 
-def load_model(directory, sess):
+def load_model(directory, name, sess):
     if os.path.exists(directory):
         try:
-            tf.saved_model.loader.load(sess, ['TRAINING'], directory)
+            tf.saved_model.loader.load(sess, [name], directory)
         except Exception:
             print('Serialization load error')
             return False, None
