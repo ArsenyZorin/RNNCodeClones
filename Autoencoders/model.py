@@ -161,9 +161,9 @@ class SiameseNetwork:
 
     def loss_accuracy_init(self):
         self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
-                                    self.distance, name="temp_sim")
+                                    self.distance, name='temp_sim')
         self.correct_predictions = tf.equal(self.temp_sim, self.input_y)
-        self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, "float"), name="accuracy")
+        self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, 'float'), name='accuracy')
 
         self.loss = self.get_loss()
         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
@@ -243,7 +243,7 @@ class SiameseNetwork:
             print(y_batch, dist, temp_sim)
 
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
-        print("Trained model saved to {}".format(save_path))
+        print('Trained model saved to {}'.format(save_path))
 
     def eval(self, input_x1, input_x2, answ):
         eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
@@ -258,7 +258,6 @@ class SiameseNetwork:
             dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
             print('EVAL: step {}'.format(nn))
             print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
-            print()
             if int(eval_batches[nn][2]) == int(dist):
                 eval_res.append(1)
 

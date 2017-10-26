@@ -1,34 +1,16 @@
 import numpy as np
 import tensorflow as tf
 import os
-from itertools import zip_longest
 
 
 def batch(inputs, max_sequence_length=None):
-    """
-    Args:
-        inputs:
-            list of sentences (integer lists)
-        max_sequence_length:
-            integer specifying how large should `max_time` dimension be.
-            If None, maximum sequence length would be used
-
-    Outputs:
-        inputs_time_major:
-            input sentences transformed into time-major matrix
-            (shape [max_time, batch_size]) padded with 0s
-        sequence_lengths:
-            batch-sized list of integers specifying amount of active
-            time steps in each input sequence
-    """
-
     sequence_lengths = [len(seq) for seq in inputs]
     batch_size = len(inputs)
 
     if max_sequence_length is None:
         max_sequence_length = max(sequence_lengths)
 
-    inputs_batch_major = np.zeros(shape=[batch_size, max_sequence_length], dtype=np.int32)  # == PAD
+    inputs_batch_major = np.zeros(shape=[batch_size, max_sequence_length], dtype=np.int32)
 
     for i, seq in enumerate(inputs):
         for j, element in enumerate(seq):
@@ -64,10 +46,6 @@ def shape_diff(x1, x2):
 def random_sequences(length_from, length_to,
                      vocab_lower, vocab_upper,
                      batch_size):
-    """ Generates batches of random integer sequences,
-        sequence length in [length_from, length_to],
-        vocabulary in [vocab_lower, vocab_upper]
-    """
     if length_from > length_to:
         raise ValueError('length_from > length_to')
 

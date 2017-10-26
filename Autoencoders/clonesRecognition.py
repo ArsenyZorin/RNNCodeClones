@@ -32,13 +32,13 @@ length_from = 1
 length_to = 1000
 
 batch_size = 100
-max_batches = 1000 # 20000
+max_batches = 20000
 batches_in_epoch = 1000
 
 input_embedding_size = weights.shape[1]
 
 layers = 5
-encoder_hidden_units = 20
+encoder_hidden_units = layers
 decoder_hidden_units = encoder_hidden_units
 
 encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
@@ -65,26 +65,22 @@ nonclone_seq = np.array(json.loads(nonclone_file.read()))
 
 eval_nonclone_file = open(sys.argv[1] + '/EvalNonClone', 'r')
 eval_nonclone = np.array(json.loads(eval_nonclone_file.read()))
-# origin_encoder_states = model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
-# mutated_encoder_states = np.append(mutated_seq, nonclone_seq)
-# answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
+origin_encoder_states = model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
+mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq, nonclone_seq))
+answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-origin_encoder_states = model.get_encoder_status(orig_seq[:30000])
-mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:20000], nonclone_seq[:10000]))
-answ = np.append(np.zeros(20000), np.ones(10000), axis=0)
-
-# eval_orig_encoder_states = model.get_encoder_status(np.append(eval_seq, eval_seq[:eval_nonclone.shape[0]], axis=0))
-# eval_clone_encoder_states = model.get_encoder_status(np.append(eval_mutated, eval_nonclone, axis=0))
+# origin_encoder_states = model.get_encoder_status(orig_seq[:30000])
+# mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:20000], nonclone_seq[:10000]))
+# answ = np.append(np.zeros(20000), np.ones(10000), axis=0)
 
 eval_orig_encoder_states = model.get_encoder_status(np.append(eval_seq, eval_seq[:eval_nonclone.shape[0]]))
 eval_clone_encoder_states = model.get_encoder_status(np.append(eval_mutated, eval_nonclone))
 eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0]))
 
-
-print(len(origin_encoder_states))
-print(len(mutated_encoder_states))
-print(len(answ))
+# print(len(origin_encoder_states))
+# print(len(mutated_encoder_states))
+# print(len(answ))
 
 # LSTM RNN model
 # _________________
