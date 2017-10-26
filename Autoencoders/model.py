@@ -11,7 +11,7 @@ class Seq2seq:
         self.decoder_cell = decoder_cell
         self.vocab_size = vocab_size
         self.input_embedding_size = input_embedding_size
-        self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+        self.sess = tf.InteractiveSession()
         self.weights = weights
         self.create_model()
 
@@ -78,7 +78,7 @@ class Seq2seq:
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
                                            batch_size=batch_size)
 
-        result, smth = helpers.load_model(directory, self.sess)
+        result, smth = helpers.load_model(directory, 'TRAINING', self.sess)
         if result:
             self.sess = smth
             seq_batch = next(batches)
@@ -114,7 +114,7 @@ class Seq2seq:
             print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
 
-            helpers.save_model(directory, self.sess)
+            helpers.save_model(directory, 'TRAINING', self.sess)
             print("Trained model saved to {}".format(directory))
 
         except KeyboardInterrupt:
@@ -144,7 +144,7 @@ class SiameseNetwork:
         self.sequence_length = sequence_length
         self.batch_size = batch_size
         self.layers = layers
-        self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+        self.sess = tf.InteractiveSession()
 
         self.init_out()
         self.loss_accuracy_init()
@@ -194,17 +194,30 @@ class SiameseNetwork:
 
     def dict_feed(self, x1_batch, x2_batch, y_batch=None):
         if random() > 0.5:
-            feed_dict = {
-                self.input_x1: x1_batch,
-                self.input_x2: x2_batch,
-                self.input_y: y_batch,
-            }
+
+            if y_batch is not None:
+                feed_dict = {
+                    self.input_x1: x1_batch,
+                    self.input_x2: x2_batch,
+                    self.input_y: y_batch,
+                }
+            else:
+                feed_dict = {
+                    self.input_x1: x1_batch,
+                    self.input_x2: x2_batch,
+                }
         else:
-            feed_dict = {
-                self.input_x1: x2_batch,
-                self.input_x2: x1_batch,
-                self.input_y: y_batch,
-            }
+            if y_batch is not None:
+                feed_dict = {
+                    self.input_x1: x2_batch,
+                    self.input_x2: x1_batch,
+                    self.input_y: y_batch,
+                }
+            else:
+                feed_dict = {
+                    self.input_x1: x2_batch,
+                    self.input_x2: x1_batch,
+                }
         return feed_dict
 
     def train(self, input_x1, input_x2, input_y):
@@ -219,21 +232,25 @@ class SiameseNetwork:
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
-            print("TRAIN: step {}, loss {:g}".format(nn, loss))
+            print('TRAIN: step {}, loss {:g}'.format(nn, loss))
             print(y_batch, dist, temp_sim)
 
-    def eval(self, input_x1, input_x2):
-        eval_batches = helpers.siam_batches(input_x1, input_x2)
+    def eval(self, input_x1, input_x2, answ):
+        eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
         data_size = eval_batches.shape[0]
 
         print(data_size)
+        eval_res = []
         for nn in range(data_size):
             x1_batch, x2_batch = helpers.shape_diff(eval_batches[nn][0], eval_batches[nn][1])
 
             feed_dict = self.dict_feed(x1_batch, x2_batch)
             dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
-            print("EVAL: step {}".format(nn))
-            print(dist)
+            print('EVAL: step {}'.format(nn))
+            print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
+            print()
+            if tf.rint(eval_batches[nn][2]) == dist:
+                eval_res.append(1)
 
-
-
+        percentage = len(eval_res) / data_size
+        print('Evaluation accuracy: {}'.format(percentage))
