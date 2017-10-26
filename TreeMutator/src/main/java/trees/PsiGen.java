@@ -87,17 +87,6 @@ public class PsiGen {
         return Stream.of(et).map(IElementType::toString).collect(Collectors.toList());
     }
 
-   /* private void checkTokens(List<String> tokens, ASTEntry node) {
-
-        if (!tokens.contains(node.nodeName)) {
-            System.out.println(node.nodeName);
-        }
-        for (ASTEntry child : node.children) {
-            checkTokens(tokens, child);
-        }
-
-    }*/
-
     private void fillFile(ASTEntry root, Map<Integer, String> file) {
         file.merge(root.sourceStart, root.nodeName, (v, s) -> v.concat(" " + s));
         for (ASTEntry child : root.children) {
