@@ -78,9 +78,10 @@ class Seq2seq:
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
                                            batch_size=batch_size)
 
-        result, smth = helpers.load_model(directory, 'TRAINING', self.sess)
+        saver = tf.train.Saver()
+        result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
         if result:
-            self.sess = smth
+            self.sess = sess
             seq_batch = next(batches)
             loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
             print('model restored from {}'.format(directory))
@@ -113,9 +114,11 @@ class Seq2seq:
             plt.savefig('plotfig.png')
             print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
+            save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
+            print("Trained model saved to {}".format(save_path))
 
-            helpers.save_model(directory, 'TRAINING', self.sess)
-            print("Trained model saved to {}".format(directory))
+            # helpers.save_model(directory, 'TRAINING', self.sess)
+
 
         except KeyboardInterrupt:
             print('training interrupted')
@@ -220,9 +223,16 @@ class SiameseNetwork:
                 }
         return feed_dict
 
-    def train(self, input_x1, input_x2, input_y):
+    def train(self, input_x1, input_x2, input_y, directory):
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
+
+        saver = tf.train.Saver()
+        result, sess = helpers.load_model(saver, self.sess, directory + '/siam.ckpt')
+        if result:
+            self.sess = sess
+            print('model restored from {}'.format(directory))
+            return self.sess
 
         print(data_size)
         for nn in range(data_size):
@@ -250,6 +260,7 @@ class SiameseNetwork:
             print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
             print()
             if tf.rint(eval_batches[nn][2]) == dist:
+                print('One')
                 eval_res.append(1)
 
         percentage = len(eval_res) / data_size

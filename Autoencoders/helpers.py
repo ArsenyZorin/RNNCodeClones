@@ -95,10 +95,10 @@ def save_model(directory, name, sess):
     print('Exporting train model to {}'.format(directory))
 
 
-def load_model(directory, name, sess):
-    if os.path.exists(directory):
+def load_model(saver, sess, directory):
+    if os.path.exists(directory + '.meta'):
         try:
-            tf.saved_model.loader.load(sess, [name], directory)
+            saver.restore(sess, directory)
         except Exception:
             print('Serialization load error')
             return False, None
