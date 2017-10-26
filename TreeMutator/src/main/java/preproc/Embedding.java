@@ -62,7 +62,6 @@ public class Embedding {
             System.out.print("\rTokensString: " + tree.indexOf(token) + "/" + tree.size());
         }
 
-        System.out.println(treeTokens);
         TokenizerFactory t = new DefaultTokenizerFactory();
         SentenceIterator iter = new CollectionSentenceIterator(treeTokens);
         System.out.println("Building model...");
