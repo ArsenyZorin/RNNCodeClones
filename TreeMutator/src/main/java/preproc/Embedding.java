@@ -24,7 +24,7 @@ public class Embedding {
         this.treeMutator = treeMutator;
         if(outputDir != null)
             this.workingDir = outputDir;
-        File mainEmb = new File(workingDir + "/word2Vec");
+        File mainEmb = new File(workingDir + "/networks/word2Vec");
         if(EvalType.FULL.toString().toUpperCase().equals(evalType.toUpperCase()))
             train();
         else
@@ -64,7 +64,7 @@ public class Embedding {
 
         TokenizerFactory t = new DefaultTokenizerFactory();
         SentenceIterator iter = new CollectionSentenceIterator(treeTokens);
-        System.out.println("Building model...");
+        System.out.println("\nBuilding model...");
         mainVec = new Word2Vec.Builder()
                 .minWordFrequency(1)
                 .iterations(1)
@@ -86,13 +86,13 @@ public class Embedding {
         }*/
 
         try {
-            WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
-            gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/tokensWeight");
+            WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/networks/word2Vec");
+            gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/networks/tokensWeight");
             ArrayList<double[]> weights = new ArrayList<>();
             for (int j = 0; j < mainVec.getVocab().numWords(); j++)
                 weights.add(mainVec.getWordVector(mainVec.getVocab().wordAtIndex(j)));
 
-            gsonSerialization(weights, workingDir + "/pretrainedWeights");
+            gsonSerialization(weights, workingDir + "/networks/pretrainedWeights");
         } catch (Exception ex) {
             System.out.println(ex.toString());
         }
