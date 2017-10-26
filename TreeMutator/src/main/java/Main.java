@@ -3,16 +3,14 @@ import arguments.EvalType;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import org.bytedeco.javacpp.presets.opencv_core;
+import org.apache.commons.io.FileUtils;
 import preproc.Embedding;
+import preproc.Repository;
 import preproc.TreeMutator;
 import trees.ASTEntry;
 import trees.PsiGen;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,34 +46,23 @@ public class Main {
         whiteList.removeAll(blackList);
         Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
 
-        if(!EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
+        if(EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
+            mutate(treeMutator, emb,
+                    evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode"),
+                    args.getOutputDir() +"/EvalMutatedCode");
+            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
+
+        } else if(EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
             System.out.println("Start analyzing repo : " + repoPath);
-            List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
-            emb.createEmbedding(originTree, args.getOutputDir() + "/indiciesOriginCode");
-
-            if (!EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
-                System.out.println("Start tree mutation:");
-                List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
-                emb.createEmbedding(mutatedTree, args.getOutputDir() + "/indiciesMutatedCode");
-
-                System.out.println("NonClone Methods");
-                List<ASTEntry> nonClone = treeMutator
-                        .analyzeDir("/home/arseny/deeplearning4j");
-                emb.createEmbedding(nonClone, args.getOutputDir() + "/indiciesNonClone");
-            }
+            evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/indiciesOriginCode");
+        } else if(EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
+            train(treeMutator, emb, args);
         } else {
-            System.out.println("Start analyzing repo : " + repoPath);
-            List<ASTEntry> originTree = treeMutator.analyzeDir(repoPath);
-            emb.createEmbedding(originTree, args.getOutputDir() + "/EvalCode");
+            train(treeMutator, emb, args);
 
-            System.out.println("Start tree mutation:");
-            List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
-            emb.createEmbedding(mutatedTree, args.getOutputDir() +"/EvalMutatedCode");
-
-            System.out.println("NonClone Methods");
-            List<ASTEntry> nonClone = treeMutator
-                    .analyzeDir("/home/arseny/evals/jdbc");
-            emb.createEmbedding(nonClone, args.getOutputDir() + "/EvalNonClone");
+            List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode");
+            mutate(treeMutator, emb, tree, args.getOutputDir() +"/EvalMutatedCode");
+            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
         }
 
         pythonExec("../Autoencoders/clonesRecognition.py", args.getOutputDir());
@@ -94,6 +81,46 @@ public class Main {
         return false;
     }
 
+    private static void train(TreeMutator treeMutator, Embedding emb, Arguments args){
+        File dir = emb.getIdeaRepo();
+        Repository repository = null;
+        if(dir == null)
+            repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
+        //File dir = Repository.clone("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
+        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", args.getOutputDir() + "/indiciesOriginCode");
+        mutate(treeMutator, emb, originTree, args.getOutputDir() + "/indiciesMutatedCode");
+        if(repository != null)
+            repository.removeRepo();
+        else
+            try {
+                FileUtils.deleteDirectory(dir);
+            } catch (IOException ex){
+                ex.printStackTrace();
+            }
+
+        //Repository.removeRepos(dir);
+
+
+        repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
+        //dir = Repository.clone("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
+        evaluate(treeMutator, emb, "/tmp/netbeans", args.getOutputDir() + "/indiciesNonClone");
+        //Repository.removeRepos(dir);
+        repository.removeRepo();
+
+
+    }
+
+    private static List<ASTEntry> evaluate(TreeMutator treeMutator, Embedding emb, String repoPath, String fileName){
+        List<ASTEntry> tree = treeMutator.analyzeDir(repoPath);
+        emb.createEmbedding(tree, fileName);
+        return tree;
+    }
+
+    private static void mutate(TreeMutator treeMutator, Embedding emb, List<ASTEntry> originTree, String path){
+        List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
+        emb.createEmbedding(mutatedTree, path);
+    }
+
     private static List<String> getAllAvailableTokens() {
         return generator.getAllAvailableTokens();
     }
@@ -109,14 +136,7 @@ public class Main {
     private static void pythonExec(String pythonCode, String args){
         try {
             Runtime rt = Runtime.getRuntime();
-            String[] cmds = {"python", pythonCode, args}; //"/home/arseny/Repos/RNNCodeClones/Autoencoders/seq2seq.py", "/home/arseny/Repos/RNNCodeClones/data/"};
-            /*List<String> cmdss = new ArrayList<>();
-            cmdss.add("python");
-            cmdss.addAll(args);
-
-            String[] cmds = new String[cmdss.size()];
-            cmds = cmdss.toArray(cmds);*/
-
+            String[] cmds = {"python", pythonCode, args};
             Process proc = rt.exec(cmds);
 
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
