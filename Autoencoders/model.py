@@ -85,7 +85,7 @@ class Seq2seq:
             seq_batch = next(batches)
             loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
             print('model restored from {}'.format(directory))
-            print('model less: {}'.format(loss))
+            print('model loss: {}'.format(loss))
             return self.sess
 
         loss_track = []
@@ -116,9 +116,6 @@ class Seq2seq:
                                                                          len(loss_track) * batch_size, batch_size))
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
             print("Trained model saved to {}".format(save_path))
-
-            # helpers.save_model(directory, 'TRAINING', self.sess)
-
 
         except KeyboardInterrupt:
             print('training interrupted')
@@ -245,6 +242,9 @@ class SiameseNetwork:
             print('TRAIN: step {}, loss {:g}'.format(nn, loss))
             print(y_batch, dist, temp_sim)
 
+        save_path = saver.save(self.sess, directory + '/siam.ckpt')
+        print("Trained model saved to {}".format(save_path))
+
     def eval(self, input_x1, input_x2, answ):
         eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
         data_size = eval_batches.shape[0]
@@ -259,8 +259,7 @@ class SiameseNetwork:
             print('EVAL: step {}'.format(nn))
             print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
             print()
-            if tf.rint(eval_batches[nn][2]) == dist:
-                print('One')
+            if int(eval_batches[nn][2]) == int(dist):
                 eval_res.append(1)
 
         percentage = len(eval_res) / data_size
