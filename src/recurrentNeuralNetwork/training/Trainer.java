@@ -53,7 +53,7 @@ public class Trainer {
                                     Loss reporting, boolean apply){
 
         double numerator = 0.0;
-        double denominator = 1.0;
+        double denomenator = 1.0;
 
         for (Sequence seq : sequences){
             network.reset();
@@ -65,7 +65,7 @@ public class Trainer {
                         return loss;
 
                     numerator += loss;
-                    denominator++;
+                    denomenator++;
 
                     if(apply)
                         training.backward(output, step.getTargetOutput());
@@ -79,7 +79,7 @@ public class Trainer {
                 update(network, rate);
         }
 
-        return numerator / denominator;
+        return numerator / denomenator;
     }
 
     private static void update(Network network, double size){
