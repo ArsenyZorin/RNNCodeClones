@@ -9,7 +9,6 @@ import org.eclipse.jgit.transport.http.HttpConnectionFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URL;
 
 public class Repository {
     String path;
@@ -29,9 +28,7 @@ public class Repository {
 
             HttpConnectionFactory preservedConnectionFactory = HttpTransport.getConnectionFactory();
             HttpTransport.setConnectionFactory( new InsecureHttpConnectionFactory() );
-            System.out.println("Clonning repo from " + url);
-            //InsecureHttpConnectionFactory repo = new InsecureHttpConnectionFactory();
-            //repo.create(new URL(this.url));
+            System.out.println("Cloning repo from " + this.url);
             Git.cloneRepository()
                     .setProgressMonitor(new TextProgressMonitor(new PrintWriter(System.out)))
                     .setURI(this.url)
@@ -40,9 +37,7 @@ public class Repository {
             HttpTransport.setConnectionFactory( preservedConnectionFactory );
 
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println(e.getMessage());
-            System.out.println(e.getCause());
         }
     }
 
