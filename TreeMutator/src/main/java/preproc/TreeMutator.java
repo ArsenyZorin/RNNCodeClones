@@ -48,6 +48,11 @@ public class TreeMutator {
                 .map(s -> s.replace(repoPath, ""))
                 .collect(Collectors.toList());
 
+        if(javaFiles.isEmpty()){
+            System.out.println("Dir for analyzing is empty");
+            System.exit(1);
+        }
+
         for(String file : javaFiles){
             System.out.print(String.format("Analyzing: %s/%s\tFile name: %s",
                     javaFiles.indexOf(file), javaFiles.size(), file));
