@@ -1,0 +1,158 @@
+import arguments.Arguments;
+import arguments.EvalType;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+import org.apache.commons.io.FileUtils;
+import preproc.Embedding;
+import preproc.Repository;
+import preproc.TreeMutator;
+import trees.ASTEntry;
+import trees.PsiGen;
+
+import java.io.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class Main {
+    private final static PsiGen generator = new PsiGen();
+    private final static List<String> spaces = Arrays.asList(
+            "DOC_", "COMMENT", "PACKAGE", "IMPORT",
+            "SPACE", "IMPLEMENTS", "EXTENDS", "THROWS",
+            "PARAMETER_LIST");
+
+    public static void main(String[] argv) {
+        if(argv.length < 1)
+            return;
+
+        Arguments args = new Arguments();
+        try {
+            JCommander.newBuilder().addObject(args).build().parse(argv);
+        }catch (ParameterException ex){
+            System.out.println(ex.getMessage());
+            System.out.println("For additional info type: --help or -h");
+            return;
+        }
+
+        System.out.println("Analyzed dir: " + args.getInputDir());
+        String repoPath = args.getInputDir();
+
+        List<String> whiteList = getAllAvailableTokens();
+        List<String> blackList = whiteList.stream()
+                .filter(p->contains(spaces, p)).collect(Collectors.toList());
+
+        TreeMutator treeMutator = new TreeMutator(generator, blackList, whiteList);
+        whiteList.removeAll(blackList);
+        Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
+
+        if(EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
+            mutate(treeMutator, emb,
+                    evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode"),
+                    args.getOutputDir() +"/EvalMutatedCode");
+            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
+
+        } else if(EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
+            System.out.println("Start analyzing repo : " + repoPath);
+            evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/indiciesOriginCode");
+        } else if(EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
+            train(treeMutator, emb, args);
+        } else {
+            train(treeMutator, emb, args);
+
+            List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode");
+            mutate(treeMutator, emb, tree, args.getOutputDir() +"/EvalMutatedCode");
+            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
+        }
+
+        pythonExec("../Autoencoders/clonesRecognition.py", args.getOutputDir());
+
+    }
+
+    public Main getMain() {
+        return this;
+    }
+
+    private static boolean contains(List<String> blackList, String nodeName){
+        for(String blackElem : blackList)
+            if(nodeName.contains(blackElem))
+                return true;
+
+        return false;
+    }
+
+    private static void train(TreeMutator treeMutator, Embedding emb, Arguments args){
+        File dir = emb.getIdeaRepo();
+        Repository repository = null;
+        if(dir == null)
+            repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
+        //File dir = Repository.clone("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
+        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", args.getOutputDir() + "/indiciesOriginCode");
+        mutate(treeMutator, emb, originTree, args.getOutputDir() + "/indiciesMutatedCode");
+        if(repository != null)
+            repository.removeRepo();
+        else
+            try {
+                FileUtils.deleteDirectory(dir);
+            } catch (IOException ex){
+                ex.printStackTrace();
+            }
+
+        //Repository.removeRepos(dir);
+
+
+        repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
+        //dir = Repository.clone("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
+        evaluate(treeMutator, emb, "/tmp/netbeans", args.getOutputDir() + "/indiciesNonClone");
+        //Repository.removeRepos(dir);
+        repository.removeRepo();
+
+
+    }
+
+    private static List<ASTEntry> evaluate(TreeMutator treeMutator, Embedding emb, String repoPath, String fileName){
+        List<ASTEntry> tree = treeMutator.analyzeDir(repoPath);
+        emb.createEmbedding(tree, fileName);
+        return tree;
+    }
+
+    private static void mutate(TreeMutator treeMutator, Embedding emb, List<ASTEntry> originTree, String path){
+        List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
+        emb.createEmbedding(mutatedTree, path);
+    }
+
+    private static List<String> getAllAvailableTokens() {
+        return generator.getAllAvailableTokens();
+    }
+
+    public static String parsePSIText(String filename) {
+        return generator.parsePSIText(filename);
+    }
+
+    public static ASTEntry buildPSI(String filename) {
+        return generator.parseFile(filename);
+    }
+
+    private static void pythonExec(String pythonCode, String args){
+        try {
+            Runtime rt = Runtime.getRuntime();
+            String[] cmds = {"python", pythonCode, args};
+            Process proc = rt.exec(cmds);
+
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+            System.out.println("Output:");
+            String s = null;
+
+            while ((s = stdInput.readLine()) != null)
+                System.out.println(s);
+
+            while ((s=stdError.readLine()) != null)
+                System.out.println(s);
+
+        } catch (IOException ex){
+            ex.printStackTrace();
+        }
+    }
+}
