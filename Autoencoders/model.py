@@ -251,15 +251,18 @@ class SiameseNetwork:
 
         print(data_size)
         eval_res = []
-        for nn in range(data_size):
-            x1_batch, x2_batch = helpers.shape_diff(eval_batches[nn][0], eval_batches[nn][1])
+        step = 0
+        for i in range(data_size):
+            for nn in range(data_size):
+                step += 1
+                x1_batch, x2_batch = helpers.shape_diff(eval_batches[i][0], eval_batches[nn][1])
 
-            feed_dict = self.dict_feed(x1_batch, x2_batch)
-            dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
-            print('EVAL: step {}'.format(nn))
-            print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
-            if int(eval_batches[nn][2]) == int(dist):
-                eval_res.append(1)
+                feed_dict = self.dict_feed(x1_batch, x2_batch)
+                dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+                print('EVAL: step {}'.format(step))
+                print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
+                if int(eval_batches[nn][2]) == int(dist):
+                    eval_res.append(1)
 
         percentage = len(eval_res) / data_size
         print('Evaluation accuracy: {}'.format(percentage))
