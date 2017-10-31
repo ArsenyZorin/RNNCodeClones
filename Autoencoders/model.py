@@ -111,7 +111,7 @@ class Seq2seq:
                     print()
 
             plt.plot(loss_track)
-            plt.savefig('plotfig.png')
+            plt.savefig(directory + '/plotfig.png')
             print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
