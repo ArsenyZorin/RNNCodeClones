@@ -27,6 +27,7 @@ public class Main {
 
         try {
             JCommander.newBuilder().programName("RNNCodeClones").addObject(args).build().parse(argv);
+            args.globalValidation();
         }catch (ParameterException ex){
             System.out.println(ex.getMessage());
             System.out.println("For additional info type: --help or -h");
@@ -38,9 +39,6 @@ public class Main {
             return;
         }
 
-        System.out.println("Analyzed dir: " + args.getInputDir());
-        String repoPath = args.getInputDir();
-
         List<String> whiteList = getAllAvailableTokens();
         List<String> blackList = whiteList.stream()
                 .filter(p->contains(spaces, p)).collect(Collectors.toList());
@@ -50,17 +48,22 @@ public class Main {
         Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
 
         if(EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
+            System.out.println("Directory for mutation: " + args.getInputDir());
+            String repoPath = args.getInputDir();
             mutate(treeMutator, emb,
                     evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode"),
                     args.getOutputDir() +"/EvalMutatedCode");
             evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
 
         } else if(EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
+            String repoPath = args.getInputDir();
             System.out.println("Start analyzing repo : " + repoPath);
             evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/indiciesOriginCode");
         } else if(EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
             train(treeMutator, emb, args);
         } else {
+            System.out.println("Directory for analysis: " + args.getInputDir());
+            String repoPath = args.getInputDir();
             train(treeMutator, emb, args);
 
             List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode");
