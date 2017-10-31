@@ -41,6 +41,9 @@ public class Arguments {
     }
 
     public void globalValidation(){
+        if(help)
+            return;
+
         if(!EvalType.TRAIN.toString().equals(evalType.toUpperCase())) {
             if (inputDir == null)
                 throw new ParameterException("Input directory is not specified");
