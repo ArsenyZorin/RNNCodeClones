@@ -1,4 +1,4 @@
-package preproc;
+package gitrepos;
 
 import org.eclipse.jgit.transport.http.HttpConnection;
 import org.eclipse.jgit.transport.http.HttpConnectionFactory;

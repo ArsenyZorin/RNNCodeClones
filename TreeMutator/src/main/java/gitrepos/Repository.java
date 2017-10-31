@@ -1,5 +1,6 @@
-package preproc;
+package gitrepos;
 
+import gitrepos.InsecureHttpConnectionFactory;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.TextProgressMonitor;
