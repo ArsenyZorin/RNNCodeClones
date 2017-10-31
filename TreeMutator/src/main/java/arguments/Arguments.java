@@ -1,6 +1,8 @@
 package arguments;
 
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+
 import java.io.File;
 
 public class Arguments {
@@ -13,7 +15,7 @@ public class Arguments {
     private String evalType = "full";
 
     @Parameter(names = {"--outputDir", "--output"}, description = "Specify output dir for data saving", validateWith = DirValidator.class)
-    private String outputDir = System.getProperty("user.home");
+    private String outputDir = System.getProperty("user.home") + "/.rnncodeclones";
 
     @Parameter(names = {"--inputDir", "--input"}, description = "Specify input dir for data analyzing. " +
             "Not required when evaluation type is train", validateWith = DirValidator.class)
@@ -36,6 +38,17 @@ public class Arguments {
 
     public boolean getHelp(){
         return help;
+    }
+
+    public void globalValidation(){
+        if(!EvalType.TRAIN.toString().equals(evalType.toUpperCase())) {
+            if (inputDir == null)
+                throw new ParameterException("Input directory is not specified");
+        }
+        else {
+            if (inputDir != null)
+                System.out.println("Input directory for training is not required");
+        }
     }
 }
 
