@@ -5,7 +5,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import org.apache.commons.io.FileUtils;
 import preproc.Embedding;
-import preproc.Repository;
+import gitrepos.Repository;
 import preproc.TreeMutator;
 import trees.ASTEntry;
 import trees.PsiGen;
@@ -23,15 +23,18 @@ public class Main {
             "PARAMETER_LIST");
 
     public static void main(String[] argv) {
-        if(argv.length < 1)
-            return;
-
         Arguments args = new Arguments();
+
         try {
-            JCommander.newBuilder().addObject(args).build().parse(argv);
+            JCommander.newBuilder().programName("RNNCodeClones").addObject(args).build().parse(argv);
         }catch (ParameterException ex){
             System.out.println(ex.getMessage());
             System.out.println("For additional info type: --help or -h");
+            return;
+        }
+
+        if(args.getHelp()){
+            new JCommander(args, null, argv).usage();
             return;
         }
 
