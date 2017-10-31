@@ -65,7 +65,7 @@ public class Main {
             evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
         }
 
-        pythonExec("../Autoencoders/clonesRecognition.py", args.getOutputDir());
+        pythonExec("clonesRecognition.py", args.getOutputDir());
 
     }
 
@@ -86,7 +86,6 @@ public class Main {
         Repository repository = null;
         if(dir == null)
             repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
-        //File dir = Repository.clone("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
         List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", args.getOutputDir() + "/indiciesOriginCode");
         mutate(treeMutator, emb, originTree, args.getOutputDir() + "/indiciesMutatedCode");
         if(repository != null)
@@ -98,13 +97,8 @@ public class Main {
                 ex.printStackTrace();
             }
 
-        //Repository.removeRepos(dir);
-
-
         repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
-        //dir = Repository.clone("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
         evaluate(treeMutator, emb, "/tmp/netbeans", args.getOutputDir() + "/indiciesNonClone");
-        //Repository.removeRepos(dir);
         repository.removeRepo();
 
 

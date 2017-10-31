@@ -61,15 +61,14 @@
             <artifactId>jcommander</artifactId>
             <version>1.72</version>
         </dependency>
-
-        <!--<dependency>
-            <groupId>org.datavec</groupId>
-            <artifactId>datavec-api</artifactId>
-            <version>0.8.0</version>
-        </dependency>-->
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>../Autoencoders</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
