@@ -1,6 +1,7 @@
 import helpers
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import sys
 from random import random
 
 
@@ -78,7 +79,8 @@ class Seq2seq:
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
                                            batch_size=batch_size)
 
-        saver = tf.train.Saver()
+        self.restore(directory + '/seq2seq.ckpt')
+        '''saver = tf.train.Saver()
         result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
         if result:
             self.sess = sess
@@ -86,7 +88,7 @@ class Seq2seq:
             loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
             print('model restored from {}'.format(directory))
             print('model loss: {}'.format(loss))
-            return self.sess
+            return self.sess'''
 
         loss_track = []
         try:
@@ -114,11 +116,21 @@ class Seq2seq:
             plt.savefig(directory + '/plotfig.png')
             print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
+
+            saver = tf.train.Saver()
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
             print("Trained model saved to {}".format(save_path))
 
         except KeyboardInterrupt:
             print('training interrupted')
+
+    def restore(self, directory):
+        saver = tf.train.Saver()
+        result, sess = helpers.load_model(saver, self.sess, directory)
+        if result:
+            self.sess = sess
+            print('model restored from {}'.format(directory))
+            return self.sess
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
@@ -224,12 +236,7 @@ class SiameseNetwork:
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
 
-        saver = tf.train.Saver()
-        result, sess = helpers.load_model(saver, self.sess, directory + '/siam.ckpt')
-        if result:
-            self.sess = sess
-            print('model restored from {}'.format(directory))
-            return self.sess
+        self.restore(directory + '/siam.ckpt')
 
         print(data_size)
         for nn in range(data_size):
@@ -242,6 +249,7 @@ class SiameseNetwork:
             print('TRAIN: step {}, loss {:g}'.format(nn, loss))
             print(y_batch, dist, temp_sim)
 
+        saver = tf.train.Saver()
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
@@ -266,3 +274,11 @@ class SiameseNetwork:
 
         percentage = len(eval_res) / data_size
         print('Evaluation accuracy: {}'.format(percentage))
+
+    def restore(self, directory):
+        saver = tf.train.Saver()
+        result, sess = helpers.load_model(saver, self.sess, directory)
+        if result:
+            self.sess = sess
+            print('model restored from {}'.format(directory))
+            return self.sess
