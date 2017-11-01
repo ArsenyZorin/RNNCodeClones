@@ -3,7 +3,7 @@ import tensorflow as tf
 import json
 import sys
 import os
-from seq2seq_model import Seq2seq, SiameseNetwork
+from model import Seq2seq, SiameseNetwork
 
 if len(sys.argv) < 2:
     print('Invalid usage of Seq2seq script')
