@@ -36,9 +36,9 @@ public class Repository {
                     .setDirectory(dir)
                     .call();
             HttpTransport.setConnectionFactory( preservedConnectionFactory );
-
         } catch (Exception e) {
             System.out.println(e.getMessage());
+            System.exit(1);
         }
     }
 
