@@ -12,8 +12,11 @@ public class DirValidator implements IParameterValidator{
 
         if(Files.exists(file.toPath())) {
             if (Files.isDirectory(file.toPath())) {
-                if ("--outputDir".equals(name))
+                if ("--outputDir".equals(name)) {
                     System.out.println("Specified dir in parameter " + name + " already exists.\nFiles will be rewritten!");
+                    File dirs = new File(file.getPath() + "/networks");
+                    dirs.mkdirs();
+                }
             }
             else
                 throw new ParameterException("Specified path in " + name + " parameter is file");

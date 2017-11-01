@@ -52,6 +52,11 @@ public class Arguments {
             if (inputDir != null)
                 System.out.println("Input directory for training is not required");
         }
+
+        if(outputDir.equals(System.getProperty("user.home") + "/.rnncodeclones")){
+            File dirs = new File(outputDir + "/networks");
+            dirs.mkdirs();
+        }
     }
 }
 
