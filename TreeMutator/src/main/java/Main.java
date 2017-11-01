@@ -13,6 +13,7 @@ import trees.PsiGen;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -71,7 +72,7 @@ public class Main {
             evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
         }
 
-        pythonExec("clonesRecognition.py", args.getOutputDir());
+        pythonExec(new Main().getFile("clonesRecognition.py"), args.getOutputDir());
 
     }
 
@@ -154,5 +155,11 @@ public class Main {
         } catch (IOException ex){
             ex.printStackTrace();
         }
+    }
+
+    private String getFile(String fileName) {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(fileName).getFile());
+        return file.getPath();
     }
 }
