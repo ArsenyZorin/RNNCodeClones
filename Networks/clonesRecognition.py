@@ -1,11 +1,10 @@
 import numpy as np
 import tensorflow as tf
 import json
-import sys
 import os
 from model import Seq2seq, SiameseNetwork
 
-if len(sys.argv) < 2:
+'''if len(sys.argv) < 2:
     print('Invalid usage of Seq2seq script')
     print('Please set directory with data')
     sys.exit(0)
@@ -13,15 +12,14 @@ if len(sys.argv) < 2:
 if sys.argv[1] == '-h' or sys.argv[1] == '--help':
     print('Help message')
     sys.exit(0)
-
+'''
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
 tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Directory with data for analysis')
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-print('Arguments: {}'.format(sys.argv[1]))
-
+# print('Arguments: {}'.format(sys.argv[1]))
 tf.reset_default_graph()
 print(tf.__version__)
 

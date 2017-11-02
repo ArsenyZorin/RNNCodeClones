@@ -1,6 +1,7 @@
 import helpers
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import numpy as np
 import sys
 from random import random
 
@@ -254,26 +255,54 @@ class SiameseNetwork:
         print('Trained model saved to {}'.format(save_path))
 
     def eval(self, input_x1, input_x2, answ):
-        eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
-        data_size = eval_batches.shape[0]
 
-        print(data_size)
-        eval_res = []
-        step = 0
-        for i in range(data_size):
-            for nn in range(data_size):
-                step += 1
-                x1_batch, x2_batch = helpers.shape_diff(eval_batches[i][0], eval_batches[nn][1])
+        if input_x2 is not None:
+            eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
+            data_size = eval_batches.shape[0]
 
-                feed_dict = self.dict_feed(x1_batch, x2_batch)
-                dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
-                print('EVAL: step {}'.format(step))
-                print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
-                if int(eval_batches[nn][2]) == int(dist):
-                    eval_res.append(1)
+            eval_res = []
+            step = 0
+            for i in range(data_size):
+                for n in range(data_size):
+                    step += 1
+                    '''x1_batch, x2_batch = helpers.shape_diff(eval_batches[i][0], eval_batches[nn][1])
+    
+                    feed_dict = self.dict_feed(x1_batch, x2_batch)
+                    dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+                    print('EVAL: step {}'.format(step))
+                    print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
+                    if int(eval_batches[nn][2]) == int(dist):
+                        eval_res.append(1)'''
+
+                    eval_res = self.step(eval_batches[i], eval_batches[n], step, eval_res)
+        else:
+            eval_batches = np.asarray(list(zip(input_x1, input_x1, answ)))
+            data_size = eval_batches.shape[0]
+
+            eval_res = []
+            step = 0
+
+            for i in range(data_size):
+                for n in range(data_size, i + 1, -1):
+                    if i == n:
+                        continue
+                    step += 1
+                    eval_res = self.step(eval_batches[i], eval_batches[n], step, eval_res)
 
         percentage = len(eval_res) / data_size
         print('Evaluation accuracy: {}'.format(percentage))
+
+    def step(self, x1, x2, step, eval_res):
+        x1_batch, x2_batch = helpers.shape_diff(x1[0], x2[1])
+
+        feed_dict = self.dict_feed(x1_batch, x2_batch)
+        dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+        print('EVAL: step {}'.format(step))
+        print('Expected: {}\t Got {}:'.format(x2[2], dist))
+        if int(x2[2]) == int(dist):
+            eval_res.append(1)
+
+        return eval_res
 
     def restore(self, directory):
         saver = tf.train.Saver()
