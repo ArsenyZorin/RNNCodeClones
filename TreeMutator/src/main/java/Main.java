@@ -11,6 +11,7 @@ import trees.ASTEntry;
 import trees.PsiGen;
 
 import java.io.*;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -29,38 +30,38 @@ public class Main {
         try {
             JCommander.newBuilder().programName("RNNCodeClones").addObject(args).build().parse(argv);
             args.globalValidation();
-        }catch (ParameterException ex){
+        } catch (ParameterException ex) {
             System.out.println(ex.getMessage());
             System.out.println("For additional info type: --help or -h");
             return;
         }
 
-        if(args.getHelp()){
+        if (args.getHelp()) {
             new JCommander(args, null, argv).usage();
             return;
         }
 
         List<String> whiteList = getAllAvailableTokens();
         List<String> blackList = whiteList.stream()
-                .filter(p->contains(spaces, p)).collect(Collectors.toList());
+                .filter(p -> contains(spaces, p)).collect(Collectors.toList());
 
         TreeMutator treeMutator = new TreeMutator(generator, blackList, whiteList);
         whiteList.removeAll(blackList);
         Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
 
-        if(EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
+        if (EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
             System.out.println("Directory for mutation: " + args.getInputDir());
             String repoPath = args.getInputDir();
             mutate(treeMutator, emb,
                     evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode"),
-                    args.getOutputDir() +"/EvalMutatedCode");
+                    args.getOutputDir() + "/EvalMutatedCode");
             evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
 
-        } else if(EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
+        } else if (EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
             String repoPath = args.getInputDir();
             System.out.println("Start analyzing repo : " + repoPath);
             evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/indiciesOriginCode");
-        } else if(EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
+        } else if (EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
             train(treeMutator, emb, args);
         } else {
             System.out.println("Directory for analysis: " + args.getInputDir());
@@ -68,12 +69,15 @@ public class Main {
             train(treeMutator, emb, args);
 
             List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode");
-            mutate(treeMutator, emb, tree, args.getOutputDir() +"/EvalMutatedCode");
+            mutate(treeMutator, emb, tree, args.getOutputDir() + "/EvalMutatedCode");
             evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
         }
 
-        pythonExec(new Main().getFile("clonesRecognition.py"), args.getOutputDir());
+        String path = Main.class.getResource("/clonesRecognition.py").getPath();
+        System.out.println(path);
 
+        String pythonArgs = "--type full --data " + args.getOutputDir();
+        pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
     }
 
     public Main getMain() {
@@ -155,11 +159,5 @@ public class Main {
         } catch (IOException ex){
             ex.printStackTrace();
         }
-    }
-
-    private String getFile(String fileName) {
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(fileName).getFile());
-        return file.getPath();
     }
 }
