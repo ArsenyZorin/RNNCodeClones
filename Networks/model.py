@@ -9,13 +9,15 @@ from random import random
 class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
-        self.encoder_cell = encoder_cell
-        self.decoder_cell = decoder_cell
-        self.vocab_size = vocab_size
-        self.input_embedding_size = input_embedding_size
+        self.scope = 'seq2seq_'
         self.sess = tf.InteractiveSession()
-        self.weights = weights
-        self.create_model()
+        with tf.variable_scope(self.scope):
+            self.encoder_cell = encoder_cell
+            self.decoder_cell = decoder_cell
+            self.vocab_size = vocab_size
+            self.input_embedding_size = input_embedding_size
+            self.weights = weights
+            self.create_model()
 
     def create_model(self):
         self.create_placeholders()
@@ -26,50 +28,57 @@ class Seq2seq:
         self.create_sess()
 
     def create_placeholders(self):
-        self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32, name='encoder_inputs')
-        self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32, name='decoder_targets')
-        self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32, name='decoder_inputs')
+            self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+                                                 name='encoder_inputs')
+            self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
+                                                  name='decoder_targets')
+            self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+                                                 name='decoder_inputs')
 
     def create_embeddings(self):
-        self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0), dtype=tf.float32)
-        self.encoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs)
-        self.decoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs)
+            self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
+                                          dtype=tf.float32, name='embeddings')
+            self.encoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs,
+                                                                  name='encoder_inputs_emb')
+            self.decoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs,
+                                                                  name='decoder_inputs_emb')
 
     def init_encoder(self):
-        self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
-            self.encoder_cell, self.encoder_inputs_embedded,
-            dtype=tf.float32, time_major=True,)
+            self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
+                self.encoder_cell, self.encoder_inputs_embedded,
+                dtype=tf.float32, time_major=True,)
 
     def init_decoder(self):
-        self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
-            self.decoder_cell, self.decoder_inputs_embedded,
-            initial_state=self.encoder_final_state,
-            dtype=tf.float32, time_major=True, scope="plain_decoder",)
+            self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
+                self.decoder_cell, self.decoder_inputs_embedded,
+                initial_state=self.encoder_final_state,
+                dtype=tf.float32, time_major=True, scope="plain_decoder",)
 
-        self.decoder_logits = tf.contrib.layers.linear(self.decoder_outputs, self.vocab_size)
-        self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
+            self.decoder_logits = tf.contrib.layers.linear(self.decoder_outputs, self.vocab_size)
+            self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
 
     def init_optimizer(self):
-        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
-            logits=self.decoder_logits,)
+            self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
+                logits=self.decoder_logits, name='stepwise')
 
-        self.loss = tf.reduce_mean(self.stepwise_cross_entropy)
-        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+            self.loss = tf.reduce_mean(self.stepwise_cross_entropy)
+            self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
     def make_train_inputs(self, input_seq, target_seq):
-        self.encoder_inputs_, _ = helpers.batch(input_seq)
-        self.decoder_targets_, _ = helpers.batch(target_seq)
-        self.decoder_inputs_, _ = helpers.batch(input_seq)
-        return {
-            self.encoder_inputs: self.encoder_inputs_,
-            self.decoder_inputs: self.decoder_inputs_,
-            self.decoder_targets: self.decoder_targets_,
-        }
+            self.encoder_inputs_, _ = helpers.batch(input_seq)
+            self.decoder_targets_, _ = helpers.batch(target_seq)
+            self.decoder_inputs_, _ = helpers.batch(input_seq)
+            return {
+                self.encoder_inputs: self.encoder_inputs_,
+                self.decoder_inputs: self.decoder_inputs_,
+                self.decoder_targets: self.decoder_targets_,
+            }
 
     def create_sess(self):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.embeddings.assign(self.weights))
+        self.seq2seq_vars = tf.global_variables(self.scope)
 
     def train(self, length_from,
               length_to, vocab_lower,
@@ -108,7 +117,7 @@ class Seq2seq:
             plt.plot(loss_track)
             plt.savefig(directory + '/plotfig.png')
 
-            saver = tf.train.Saver()
+            saver = tf.train.Saver(self.seq2seq_vars)
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
             print("Trained model saved to {}".format(save_path))
 
@@ -116,7 +125,7 @@ class Seq2seq:
             print('training interrupted')
 
     def restore(self, directory):
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(self.seq2seq_vars)
         result, sess = helpers.load_model(saver, self.sess, directory)
         if result:
             self.sess = sess
@@ -134,24 +143,35 @@ class Seq2seq:
         print()
         return encoder_fs
 
+    def decode(self, sequence):
+        decoder_outp = []
+        for seq in sequence:
+            feed_dict = {self.decoder_inputs: [seq]}
+            decoder_outp.append(self.sess.run(self.decoder_outputs, feed_dict=feed_dict))
+
+        return decoder_outp
+
     def get_sess(self):
         return self.sess
 
 
 class SiameseNetwork:
     def __init__(self, sequence_length, batch_size, layers):
-        self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
-        self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
-        self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
-
-        self.sequence_length = sequence_length
-        self.batch_size = batch_size
-        self.layers = layers
+        self.scope = 'siamese_'
         self.sess = tf.InteractiveSession()
+        with tf.variable_scope(self.scope):
+            self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
+            self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
+            self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
 
-        self.init_out()
-        self.loss_accuracy_init()
-        self.sess.run(tf.global_variables_initializer())
+            self.sequence_length = sequence_length
+            self.batch_size = batch_size
+            self.layers = layers
+
+            self.init_out()
+            self.loss_accuracy_init()
+            self.sess.run(tf.global_variables_initializer())
+        self.siam_vars = tf.global_variables(self.scope)
 
     def init_out(self):
         self.out1 = self.rnn(self.input_x1, 'method1')
@@ -240,7 +260,7 @@ class SiameseNetwork:
             print('TRAIN: step {}, loss {:g}'.format(nn, loss))
             print(y_batch, dist, temp_sim)
 
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(self.scope)
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
@@ -293,7 +313,7 @@ class SiameseNetwork:
         return eval_res
 
     def restore(self, directory):
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(self.scope)
         result, sess = helpers.load_model(saver, self.sess, directory)
         if result:
             self.sess = sess

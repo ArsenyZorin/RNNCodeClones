@@ -66,8 +66,8 @@ def load_model(saver, sess, directory):
     if os.path.exists(directory + '.meta'):
         try:
             saver.restore(sess, directory)
-        except Exception:
-            print('Serialization load error')
+        except Exception as e:
+            print('Serialization load error:\n' + str(e))
             return False, None
         return True, sess
     return False, None
