@@ -81,16 +81,6 @@ class Seq2seq:
                                            batch_size=batch_size)
 
         self.restore(directory + '/seq2seq.ckpt')
-        '''saver = tf.train.Saver()
-        result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
-        if result:
-            self.sess = sess
-            seq_batch = next(batches)
-            loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
-            print('model restored from {}'.format(directory))
-            print('model loss: {}'.format(loss))
-            return self.sess'''
-
         loss_track = []
         try:
             for batch in range(max_batches + 1):
@@ -113,10 +103,10 @@ class Seq2seq:
                             break
                     print()
 
-            plt.plot(loss_track)
-            plt.savefig(directory + '/plotfig.png')
             print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
+            plt.plot(loss_track)
+            plt.savefig(directory + '/plotfig.png')
 
             saver = tf.train.Saver()
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
@@ -254,29 +244,19 @@ class SiameseNetwork:
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
-    def eval(self, input_x1, input_x2, answ):
+    def eval(self, input_x1, input_x2=None, answ=None):
 
-        if input_x2 is not None:
+        if input_x2 is not None and answ is not None:
             eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
             data_size = eval_batches.shape[0]
 
             eval_res = []
             step = 0
             for i in range(data_size):
-                for n in range(data_size):
-                    step += 1
-                    '''x1_batch, x2_batch = helpers.shape_diff(eval_batches[i][0], eval_batches[nn][1])
-    
-                    feed_dict = self.dict_feed(x1_batch, x2_batch)
-                    dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
-                    print('EVAL: step {}'.format(step))
-                    print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
-                    if int(eval_batches[nn][2]) == int(dist):
-                        eval_res.append(1)'''
-
-                    eval_res = self.step(eval_batches[i], eval_batches[n], step, eval_res)
-        else:
-            eval_batches = np.asarray(list(zip(input_x1, input_x1, answ)))
+                step += 1
+                eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], step, eval_res)
+        elif input_x2 is None and answ is None:
+            eval_batches = np.asarray(input_x1)
             data_size = eval_batches.shape[0]
 
             eval_res = []
@@ -287,20 +267,28 @@ class SiameseNetwork:
                     if i == n:
                         continue
                     step += 1
-                    eval_res = self.step(eval_batches[i], eval_batches[n], step, eval_res)
+                    eval_res = self.step(eval_batches[i], eval_batches[n], None, step, eval_res)
+        else:
+            print('Invalid evaluation')
+            sys.exit(1)
 
         percentage = len(eval_res) / data_size
         print('Evaluation accuracy: {}'.format(percentage))
 
-    def step(self, x1, x2, step, eval_res):
-        x1_batch, x2_batch = helpers.shape_diff(x1[0], x2[1])
+    def step(self, x1, x2, answ, step, eval_res):
+        x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
         feed_dict = self.dict_feed(x1_batch, x2_batch)
         dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
         print('EVAL: step {}'.format(step))
-        print('Expected: {}\t Got {}:'.format(x2[2], dist))
-        if int(x2[2]) == int(dist):
-            eval_res.append(1)
+        if answ is not None:
+            print('Expected: {}\t Got {}:'.format(answ, dist))
+            if int(x2[2]) == int(dist):
+                eval_res.append(1)
+        else:
+            print('Answer: {}'.format(dist))
+            if 1 == int(dist):
+                eval_res.append(1)
 
         return eval_res
 
