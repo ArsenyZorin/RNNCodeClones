@@ -3,6 +3,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import CloneClass
 from random import random
 
 
@@ -265,7 +266,6 @@ class SiameseNetwork:
         print('Trained model saved to {}'.format(save_path))
 
     def eval(self, input_x1, input_x2=None, answ=None):
-
         if input_x2 is not None and answ is not None:
             eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
             data_size = eval_batches.shape[0]
@@ -275,27 +275,36 @@ class SiameseNetwork:
             for i in range(data_size):
                 step += 1
                 eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], step, eval_res)
+
+            percentage = len(eval_res) / data_size
+            print('Evaluation accuracy: {}'.format(percentage))
+
         elif input_x2 is None and answ is None:
             eval_batches = np.asarray(input_x1)
             data_size = eval_batches.shape[0]
 
             eval_res = []
+            clones_list = []
             step = 0
 
             for i in range(data_size):
+                clones = CloneClass(eval_batches[i])
                 for n in range(data_size, i + 1, -1):
                     if i == n:
                         continue
                     step += 1
-                    eval_res = self.step(eval_batches[i], eval_batches[n], None, step, eval_res)
+                    eval_res += self.step(eval_batches[i], eval_batches[n], None, step, clones)
+                clones_list.append(clones)
+
+            percentage = len(eval_res) / data_size
+            print('Clones percentage: {}'.format(percentage))
+            return clones_list
         else:
             print('Invalid evaluation')
             sys.exit(1)
 
-        percentage = len(eval_res) / data_size
-        print('Evaluation accuracy: {}'.format(percentage))
-
-    def step(self, x1, x2, answ, step, eval_res):
+    def step(self, x1, x2, answ, step, clones):
+        eval_res = []
         x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
         feed_dict = self.dict_feed(x1_batch, x2_batch)
@@ -309,11 +318,12 @@ class SiameseNetwork:
             print('Answer: {}'.format(dist))
             if 1 == int(dist):
                 eval_res.append(1)
+                clones.append(x2)
 
         return eval_res
 
     def restore(self, directory):
-        saver = tf.train.Saver(self.scope)
+        saver = tf.train.Saver(self.siam_vars)
         result, sess = helpers.load_model(saver, self.sess, directory)
         if result:
             self.sess = sess
