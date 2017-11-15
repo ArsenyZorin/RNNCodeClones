@@ -94,7 +94,6 @@ class Seq2seq:
 
         self.restore(directory + '/seq2seq.ckpt')
         loss_track = []
-#        try:
         for batch in range(max_batches + 1):
             seq_batch = next(batches)
             fd = self.make_train_inputs(seq_batch, seq_batch)
@@ -120,9 +119,6 @@ class Seq2seq:
         saver = tf.train.Saver(self.seq2seq_vars)
         save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
         print("Trained model saved to {}".format(save_path))
-
-#         except KeyboardInterrupt:
-#            print('training interrupted')
 
     def restore(self, directory):
         saver = tf.train.Saver(self.seq2seq_vars)
