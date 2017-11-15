@@ -95,38 +95,38 @@ class Seq2seq:
 
         self.restore(directory + '/seq2seq.ckpt')
         loss_track = []
-        try:
-            for batch in range(max_batches + 1):
-                seq_batch = next(batches)
-                fd = self.make_train_inputs(seq_batch, seq_batch)
-                _, l = self.sess.run([self.train_op, self.loss], fd)
-                loss_track.append(l)
-                current_loss = self.sess.run(self.loss, fd)
-                print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end="")
+#        try:
+        for batch in range(max_batches + 1):
+            seq_batch = next(batches)
+            fd = self.make_train_inputs(seq_batch, seq_batch)
+            _, l = self.sess.run([self.train_op, self.loss], fd)
+            loss_track.append(l)
+            current_loss = self.sess.run(self.loss, fd)
+            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end="")
 
-                if batch == 0 or batch % batches_in_epoch == 0:
-                    print('\nbatch {}'.format(batch))
-                    print('  minibatch loss: {}'.format(current_loss))
-                    predict_ = self.sess.run(self.decoder_prediction, fd)
-                    for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
-                        print('  sample {}:'.format(i + 1))
-                        print('    input     > {}'.format(inp))
-                        print('    predicted > {}'.format(pred))
-                        if i >= 2:
-                            break
-                    print()
+            if batch == 0 or batch % batches_in_epoch == 0:
+                print('\nbatch {}'.format(batch))
+                print('  minibatch loss: {}'.format(current_loss))
+                predict_ = self.sess.run(self.decoder_prediction, fd)
+                for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
+                    print('  sample {}:'.format(i + 1))
+                    print('    input     > {}'.format(inp))
+                    print('    predicted > {}'.format(pred))
+                    if i >= 2:
+                        break
+                print()
 
-            print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
+        print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
-            plt.plot(loss_track)
-            plt.savefig(directory + '/plotfig.png')
+        plt.plot(loss_track)
+        plt.savefig(directory + '/plotfig.png')
 
-            saver = tf.train.Saver(self.seq2seq_vars)
-            save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
-            print("Trained model saved to {}".format(save_path))
+        saver = tf.train.Saver(self.seq2seq_vars)
+        save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
+        print("Trained model saved to {}".format(save_path))
 
-        except KeyboardInterrupt:
-            print('training interrupted')
+#         except KeyboardInterrupt:
+#            print('training interrupted')
 
     def restore(self, directory):
         saver = tf.train.Saver(self.seq2seq_vars)
