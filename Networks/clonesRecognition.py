@@ -52,8 +52,8 @@ def train():
     mutated_encoder_states = seq2seq_model.get_encoder_status(np.append(mutated_seq, nonclone_seq))
     answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-    # origin_encoder_states = model.get_encoder_status(orig_seq[:30000])
-    # mutated_encoder_states = model.get_encoder_status(np.append(mutated_seq[:20000], nonclone_seq[:10000]))
+    # origin_encoder_states = seq2seq_model.get_encoder_status(orig_seq[:30000])
+    # mutated_encoder_states = seq2seq_model.get_encoder_status(np.append(mutated_seq[:20000], nonclone_seq[:10000]))
     # answ = np.append(np.zeros(20000), np.ones(10000), axis=0)
 
     eval_orig_encoder_states = seq2seq_model.get_encoder_status(np.append(eval_seq, eval_seq[:eval_nonclone.shape[0]]))
@@ -85,13 +85,13 @@ length_from = 1
 length_to = 1000
 
 batch_size = 100
-max_batches = 1000 # 20000
+max_batches = 5  # 1000 # 20000
 batches_in_epoch = 1000
 
 input_embedding_size = weights.shape[1]
 
-layers = 5
-encoder_hidden_units = 20
+layers = 20
+encoder_hidden_units = layers
 decoder_hidden_units = encoder_hidden_units
 
 encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
