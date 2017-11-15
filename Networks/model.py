@@ -1,6 +1,5 @@
 import helpers
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import CloneClass
@@ -118,9 +117,6 @@ class Seq2seq:
 
         print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batch_size, batch_size))
-        plt.plot(loss_track)
-        plt.savefig(directory + '/plotfig.png')
-
         saver = tf.train.Saver(self.seq2seq_vars)
         save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
         print("Trained model saved to {}".format(save_path))
