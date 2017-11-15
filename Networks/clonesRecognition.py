@@ -3,15 +3,17 @@ import tensorflow as tf
 import shutil
 import json
 import os
+import time
 from model import Seq2seq, SiameseNetwork
 
+tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
+tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Directory with data for analysis')
+
+FLAGS = tf.flags.FLAGS
+FLAGS._parse_flags()
+
+start = time.time()
 try:
-    tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
-    tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Directory with data for analysis')
-
-    FLAGS = tf.flags.FLAGS
-    FLAGS._parse_flags()
-
     tf.reset_default_graph()
     print(tf.__version__)
 
@@ -108,7 +110,10 @@ try:
     if 'full' == FLAGS.type:
         train()
         eval()
+
+    end = time.time()
+    print('Elapsed time: {}'.format(round(end - start, 3)))
 except KeyboardInterrupt:
     print('Keyboard interruption')
-
-
+    end = time.time()
+    print('Elapsed time: {}'.format(round(end - start, 3)))
