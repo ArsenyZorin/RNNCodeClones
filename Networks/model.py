@@ -20,6 +20,10 @@ class Seq2seq:
             self.weights = weights
             self.create_model()
 
+        all_vars = tf.all_variables()
+        self.seq2seq_vars = [k for k in all_vars if k.name.startswith(self.scope)]
+        # self.seq2seq_vars = tf.global_variables(self.scope)
+
     def create_model(self):
         self.create_placeholders()
         self.create_embeddings()
@@ -79,7 +83,6 @@ class Seq2seq:
     def create_sess(self):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.embeddings.assign(self.weights))
-        self.seq2seq_vars = tf.global_variables(self.scope)
 
     def train(self, length_from,
               length_to, vocab_lower,
@@ -172,7 +175,9 @@ class SiameseNetwork:
             self.init_out()
             self.loss_accuracy_init()
             self.sess.run(tf.global_variables_initializer())
-        self.siam_vars = tf.global_variables(self.scope)
+        # self.siam_vars = tf.global_variables(self.scope)
+        all_vars = tf.all_variables()
+        self.siam_vars = [k for k in all_vars if k.name.startswith(self.scope)]
 
     def init_out(self):
         self.out1 = self.rnn(self.input_x1, 'method1')
