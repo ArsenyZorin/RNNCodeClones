@@ -56,7 +56,7 @@ class Seq2seq:
             self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
                 self.decoder_cell, self.decoder_inputs_embedded,
                 initial_state=self.encoder_final_state,
-                dtype=tf.float32, time_major=True, scope="plain_decoder",)
+                dtype=tf.float32, time_major=True, scope='plain_decoder',)
 
             self.decoder_logits = tf.contrib.layers.linear(self.decoder_outputs, self.vocab_size)
             self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
@@ -100,7 +100,7 @@ class Seq2seq:
             _, l = self.sess.run([self.train_op, self.loss], fd)
             loss_track.append(l)
             current_loss = self.sess.run(self.loss, fd)
-            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end="")
+            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end='')
 
             if batch == 0 or batch % batches_in_epoch == 0:
                 print('\nbatch {}'.format(batch))
@@ -118,7 +118,7 @@ class Seq2seq:
                                                                          len(loss_track) * batch_size, batch_size))
         saver = tf.train.Saver(self.seq2seq_vars)
         save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
-        print("Trained model saved to {}".format(save_path))
+        print('Trained model saved to {}'.format(save_path))
 
     def restore(self, directory):
         saver = tf.train.Saver(self.seq2seq_vars)
@@ -255,8 +255,11 @@ class SiameseNetwork:
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
-            print('TRAIN: step {}, loss {:g}'.format(nn, loss))
-            print(y_batch, dist, temp_sim)
+
+            print('\rStep ' + str(nn) + '/' + str(data_size), end='')
+            if nn == 0 or nn % 1000 == 0:
+                print('\nTRAIN: step {}, loss {:g}'.format(nn, loss))
+                print(y_batch, dist, temp_sim)
 
         saver = tf.train.Saver(self.scope)
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
