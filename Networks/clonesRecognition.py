@@ -13,6 +13,26 @@ FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
 start = time.time()
+
+
+def show_time():
+    end = time.time()
+    secs = round(end - start, 3)
+    mins = 0
+    hour = 0
+
+    if secs > 59:
+        mins = (int)(secs / 60)
+        secs -= mins * 60
+        if mins > 59:
+            hour = (int)(mins / 60)
+            mins -= hour * 60
+
+    if mins < 10:
+        mins = '0' + str(mins)
+    print('\nElapsed time: {}:{}:{}'.format(hour, mins, round(secs, 3)))
+
+
 try:
     tf.reset_default_graph()
     print(tf.__version__)
@@ -69,14 +89,12 @@ try:
         lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_lstm)
         lstm_model.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ)
 
-
     def eval():
         seq2seq_model.restore(directory_seq2seq + '/seq2seq.ckpt')
         origin_seq_file = open(FLAGS.data + '/vectors/indiciesOriginCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
         encoder_states = seq2seq_model.get_encoder_status(orig_seq)
         lstm_model.eval(encoder_states)
-
 
     weights_file = open(FLAGS.data + '/networks/word2vec/pretrainedWeights', 'r')
     weights = np.array(json.loads(weights_file.read()))
@@ -111,9 +129,7 @@ try:
         train()
         eval()
 
-    end = time.time()
-    print('Elapsed time: {}'.format(round(end - start, 3)))
+    show_time()
 except KeyboardInterrupt:
     print('Keyboard interruption')
-    end = time.time()
-    print('Elapsed time: {}'.format(round(end - start, 3)))
+    show_time()
