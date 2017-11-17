@@ -261,7 +261,7 @@ class SiameseNetwork:
                 print('\nTRAIN: step {}, loss {:g}'.format(nn, loss))
                 print(y_batch, dist, temp_sim)
 
-        saver = tf.train.Saver(self.scope)
+        saver = tf.train.Saver(self.siam_vars)
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
@@ -312,7 +312,7 @@ class SiameseNetwork:
         print('EVAL: step {}'.format(step))
         if answ is not None:
             print('Expected: {}\t Got {}:'.format(answ, dist))
-            if int(x2[2]) == int(dist):
+            if int(answ) == int(dist):
                 eval_res.append(1)
         else:
             print('Answer: {}'.format(dist))
