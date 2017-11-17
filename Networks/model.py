@@ -2,7 +2,7 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
-import CloneClass
+from CloneClass import CloneClass
 from random import random
 
 
