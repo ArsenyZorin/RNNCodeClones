@@ -2,6 +2,7 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
+import threading
 from CloneClass import CloneClass
 from random import random
 
@@ -285,18 +286,19 @@ class SiameseNetwork:
 
             eval_res = []
             clones_list = []
-            step = 0
+            # step = 0
 
-            for i in range(data_size):
-                clones = CloneClass(eval_batches[i])
-                for n in range(data_size - 1, i + 1, -1):
-                    print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
-                                                                      (data_size - n), data_size, step), end='')
-                    if i == n:
-                        continue
-                    step += 1
-                    eval_res += self.step(eval_batches[i], eval_batches[n], None, clones)
-                clones_list.append(clones)
+            coord = tf.train.Coordinator()
+
+            for met in range(data_size, step=10):
+                threads = [threading.Thread(
+                    target=self.loop(),
+                    args=(coord, eval_batches, i, data_size, eval_res, clones_list)) for i in range(10)]
+
+                for t in threads:
+                    t.start()
+
+                coord.join(threads)
 
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
@@ -304,6 +306,19 @@ class SiameseNetwork:
         else:
             print('Invalid evaluation')
             sys.exit(1)
+
+    def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
+        while not coord.should_stop():
+            clones = CloneClass(batches[ind])
+            for n in range(data_size - 1, ind + 1, -1):
+                # print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
+                #                                                  (data_size - n), data_size, step), end='')
+                if ind == n:
+                    continue
+                # step += 1
+                eval_res += self.step(batches[ind], batches[n], None, clones)
+            clones_list.append(clones)
+            coord.request_stop()
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
