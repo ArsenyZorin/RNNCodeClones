@@ -290,9 +290,9 @@ class SiameseNetwork:
 
             coord = tf.train.Coordinator()
 
-            for met in range(data_size, step=10):
+            for met in range(0, data_size, 10):
                 threads = [threading.Thread(
-                    target=self.loop(),
+                    target=self.loop,
                     args=(coord, eval_batches, i, data_size, eval_res, clones_list)) for i in range(10)]
 
                 for t in threads:
