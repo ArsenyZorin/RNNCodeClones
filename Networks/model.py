@@ -309,7 +309,7 @@ class SiameseNetwork:
             sys.exit(1)
 
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
-        with(tf.device('/gpu:%d'), ind):
+        with(tf.device('/gpu:{}'.format(ind))):
             while not coord.should_stop():
                 clones = CloneClass(batches[ind])
                 for n in range(data_size - 1, ind + 1, -1):
