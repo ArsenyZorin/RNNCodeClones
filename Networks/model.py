@@ -293,7 +293,7 @@ class SiameseNetwork:
             for met in range(0, data_size, 10):
                 threads = [threading.Thread(
                     target=self.loop,
-                    args=(coord, eval_batches, i, data_size, eval_res, clones_list)) for i in range(10)]
+                    args=(coord, eval_batches, i, data_size, eval_res, clones_list)) for i in range(8)]
 
                 for t in threads:
                     t.start()
@@ -308,17 +308,18 @@ class SiameseNetwork:
             sys.exit(1)
 
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
-        while not coord.should_stop():
-            clones = CloneClass(batches[ind])
-            for n in range(data_size - 1, ind + 1, -1):
-                # print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
-                #                                                  (data_size - n), data_size, step), end='')
-                if ind == n:
-                    continue
-                # step += 1
-                eval_res += self.step(batches[ind], batches[n], None, clones)
-            clones_list.append(clones)
-            coord.request_stop()
+        with(tf.device('/gpu:%d'), ind):
+            while not coord.should_stop():
+                clones = CloneClass(batches[ind])
+                for n in range(data_size - 1, ind + 1, -1):
+                    # print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
+                    #                                                  (data_size - n), data_size, step), end='')
+                    if ind == n:
+                        continue
+                    # step += 1
+                    eval_res += self.step(batches[ind], batches[n], None, clones)
+                clones_list.append(clones)
+                coord.request_stop()
 
     def step(self, x1, x2, answ, clones):
         eval_res = []

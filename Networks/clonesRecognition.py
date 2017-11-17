@@ -111,7 +111,7 @@ try:
 
     input_embedding_size = weights.shape[1]
 
-    layers = 5
+    layers = 10
     encoder_hidden_units = layers
     decoder_hidden_units = encoder_hidden_units
 
