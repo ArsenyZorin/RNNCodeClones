@@ -274,7 +274,7 @@ class SiameseNetwork:
             step = 0
             for i in range(data_size):
                 step += 1
-                eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], eval_res)
+                eval_res += self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], eval_res)
 
             percentage = len(eval_res) / data_size
             print('Evaluation accuracy: {}'.format(percentage))
@@ -288,10 +288,10 @@ class SiameseNetwork:
             step = 0
 
             for i in range(data_size):
-                print('Check {}/{}'.format(i, data_size))
                 clones = CloneClass(eval_batches[i])
                 for n in range(data_size - 1, i + 1, -1):
-                    print('Check {} with {}/{}'.format(i, (data_size - n), data_size))
+                    print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
+                                                                      (data_size - n), data_size, step), end='')
                     if i == n:
                         continue
                     step += 1
@@ -316,7 +316,6 @@ class SiameseNetwork:
             if int(answ) == int(dist):
                 eval_res.append(1)
         else:
-            print('Answer: {}'.format(dist))
             if 1 == int(dist):
                 eval_res.append(1)
                 clones.append(x2)
