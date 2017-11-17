@@ -274,7 +274,7 @@ class SiameseNetwork:
             step = 0
             for i in range(data_size):
                 step += 1
-                eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], step, eval_res)
+                eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], eval_res)
 
             percentage = len(eval_res) / data_size
             print('Evaluation accuracy: {}'.format(percentage))
@@ -288,12 +288,14 @@ class SiameseNetwork:
             step = 0
 
             for i in range(data_size):
+                print('Check {}/{}'.format(i, data_size))
                 clones = CloneClass(eval_batches[i])
-                for n in range(data_size, i + 1, -1):
+                for n in range(data_size - 1, i + 1, -1):
+                    print('Check {} with {}/{}'.format(i, (data_size - n), data_size))
                     if i == n:
                         continue
                     step += 1
-                    eval_res += self.step(eval_batches[i], eval_batches[n], None, step, clones)
+                    eval_res += self.step(eval_batches[i], eval_batches[n], None, clones)
                 clones_list.append(clones)
 
             percentage = len(eval_res) / data_size
@@ -303,13 +305,12 @@ class SiameseNetwork:
             print('Invalid evaluation')
             sys.exit(1)
 
-    def step(self, x1, x2, answ, step, clones):
+    def step(self, x1, x2, answ, clones):
         eval_res = []
         x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
         feed_dict = self.dict_feed(x1_batch, x2_batch)
         dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
-        print('EVAL: step {}'.format(step))
         if answ is not None:
             print('Expected: {}\t Got {}:'.format(answ, dist))
             if int(answ) == int(dist):
