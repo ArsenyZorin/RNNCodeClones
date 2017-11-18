@@ -131,23 +131,9 @@ class Seq2seq:
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
-        i = 1
 
         threads_num = 10
         coord = tf.train.Coordinator()
-
-        '''
-        for met in range(0, data_size, 10):
-            print('\rStep {}/{}'.format(met, data_size))
-            threads = [threading.Thread(
-                target=self.loop,
-                args=(coord, eval_batches, i, data_size, eval_res, clones_list)) for i in range(8)]
-
-            for t in threads:
-                t.start()
-
-            coord.join(threads)
-            '''
 
         elems_in_tread = int(len(sequence) / threads_num)
         threads = [threading.Thread(
@@ -161,36 +147,8 @@ class Seq2seq:
 
         coord.join(threads)
 
-        '''
-        for seq_num in range(0, len(sequence), threads_num):
-            print('\rEncoded: {}/{}'.format(seq_num, len(sequence)))
-            threads = [threading.Thread(
-                target=self.loop,
-                args=(coord))
-                for i in range(threads_num)
-            ]
-            
-            for t in threads:
-                t.start()
-            coord.join(threads)
-        '''
-        '''
-        for seq in sequence:
-            feed_dict = {self.encoder_inputs: [seq]}
-            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            print('\r{}/{}'.format(i, sequence.size), end='')
-            i += 1
-        '''
         print()
-        print(encoder_fs)
         return encoder_fs
-
-    '''
-        def loop(self, coord, seq, encoder_fs):
-            feed_dict = {self.encoder_inputs:[seq]}
-            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            print()
-    '''
 
     def loop(self, coord, begin, step, sequence, encoder_fs):
         while not coord.should_stop():
