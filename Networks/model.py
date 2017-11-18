@@ -132,13 +132,76 @@ class Seq2seq:
     def get_encoder_status(self, sequence):
         encoder_fs = []
         i = 1
+
+        threads_num = 10
+        coord = tf.train.Coordinator()
+
+        '''
+        for met in range(0, data_size, 10):
+            print('\rStep {}/{}'.format(met, data_size))
+            threads = [threading.Thread(
+                target=self.loop,
+                args=(coord, eval_batches, i, data_size, eval_res, clones_list)) for i in range(8)]
+
+            for t in threads:
+                t.start()
+
+            coord.join(threads)
+            '''
+
+        elems_in_tread = int(len(sequence) / threads_num)
+        threads = [threading.Thread(
+            target=self.loop,
+            args=(coord, i*(elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
+                for i in range(threads_num)
+        ]
+
+        for t in threads:
+            t.start()
+
+        coord.join(threads)
+
+        '''
+        for seq_num in range(0, len(sequence), threads_num):
+            print('\rEncoded: {}/{}'.format(seq_num, len(sequence)))
+            threads = [threading.Thread(
+                target=self.loop,
+                args=(coord))
+                for i in range(threads_num)
+            ]
+            
+            for t in threads:
+                t.start()
+            coord.join(threads)
+        '''
+        '''
         for seq in sequence:
             feed_dict = {self.encoder_inputs: [seq]}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
             print('\r{}/{}'.format(i, sequence.size), end='')
             i += 1
+        '''
         print()
+        print(encoder_fs)
         return encoder_fs
+
+    '''
+        def loop(self, coord, seq, encoder_fs):
+            feed_dict = {self.encoder_inputs:[seq]}
+            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+            print()
+    '''
+
+    def loop(self, coord, begin, step, sequence, encoder_fs):
+        while not coord.should_stop():
+            end = begin + step
+            if end > len(sequence):
+                end = len(sequence) - 1
+            for num in range(begin, end):
+                feed_dict = {self.encoder_inputs: [sequence[num]]}
+                encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+
+            coord.request_stop()
 
     def decode(self, sequence):
         decoder_outp = []
@@ -310,18 +373,16 @@ class SiameseNetwork:
 
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
         print('Loop with thread #{}'.format(ind))
-        with(tf.device('/gpu:{}'.format(ind))):
-            while not coord.should_stop():
-                clones = CloneClass(batches[ind])
-                for n in range(data_size - 1, ind + 1, -1):
-                    print('Check {}/{} with {}/{}. Step({})'.format(ind, data_size,
-                                                                      (data_size - n), data_size, step))
-                    if ind == n:
-                        continue
-                    # step += 1
-                    eval_res += self.step(batches[ind], batches[n], None, clones)
-                clones_list.append(clones)
-                coord.request_stop()
+        while not coord.should_stop():
+            clones = CloneClass(batches[ind])
+            for n in range(data_size - 1, ind + 1, -1):
+                print('Check {}/{}'.format(n, data_size - 1))
+                if ind == n:
+                    continue
+                # step += 1
+                eval_res += self.step(batches[ind], batches[n], None, clones)
+            clones_list.append(clones)
+            coord.request_stop()
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
