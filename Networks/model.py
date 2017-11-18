@@ -309,12 +309,13 @@ class SiameseNetwork:
             sys.exit(1)
 
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
+        print('Loop with thread #{}'.format(ind))
         with(tf.device('/gpu:{}'.format(ind))):
             while not coord.should_stop():
                 clones = CloneClass(batches[ind])
                 for n in range(data_size - 1, ind + 1, -1):
-                    # print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
-                    #                                                  (data_size - n), data_size, step), end='')
+                    print('Check {}/{} with {}/{}. Step({})'.format(ind, data_size,
+                                                                      (data_size - n), data_size, step))
                     if ind == n:
                         continue
                     # step += 1
