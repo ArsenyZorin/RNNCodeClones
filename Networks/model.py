@@ -5,7 +5,7 @@ import sys
 import threading
 from CloneClass import CloneClass
 from random import random
-
+import time
 
 class Seq2seq:
 
@@ -130,10 +130,12 @@ class Seq2seq:
     def get_encoder_status(self, sequence):
         encoder_fs = []
 
-        threads_num = 10
+        threads_num = 100
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
+        self.amount = 0
+        print(len(sequence))
         threads = [threading.Thread(
             target=self.loop,
             args=(coord, i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
@@ -146,14 +148,19 @@ class Seq2seq:
         coord.join(threads)
 
         print()
+        print('Enc_fs: {}'.format(len(encoder_fs)))
+        print('Amount: {}'.format(self.amount))
+        time.sleep(5)
         return encoder_fs
 
     def loop(self, coord, begin, elems_thr, sequence, encoder_fs):
         while not coord.should_stop():
             end = begin + elems_thr
-            if end > len(sequence):
+            if end > len(sequence): 
                 end = len(sequence) - 1
             for num in range(begin, end):
+                print('\rEncoded {}/{}'.format(num, len(sequence)), end='')
+                self.amount += 1
                 feed_dict = {self.encoder_inputs: [sequence[num]]}
                 encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
 
@@ -305,10 +312,10 @@ class SiameseNetwork:
             clones_list = []
 
             coord = tf.train.Coordinator()
-            threads_num = 8
+            threads_num = 10
 
             for met in range(0, data_size, threads_num):
-                print('\rStep {}/{}'.format(met, data_size))
+                print('\rStep {}/{}'.format(met, data_size), end='')
                 threads = [threading.Thread(
                         target=self.loop,
                         args=(coord, eval_batches, i + met, data_size, eval_res, clones_list))
@@ -319,9 +326,11 @@ class SiameseNetwork:
                     t.start()
 
                 coord.join(threads)
+                print()
                 
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
+            print('Clones list size: {}'.format(len(clones_list)))
             return clones_list
         else:
             print('Invalid evaluation')
@@ -338,6 +347,7 @@ class SiameseNetwork:
                     if ind == n:
                         continue
                     eval_res += self.step(batches[ind], batches[n], None, clones)
+                    clones_list.append(clones)
             else:
                 elems_thread = int(elems_thread)
                 threads = [threading.Thread(
@@ -350,9 +360,9 @@ class SiameseNetwork:
                 for t in threads:
                     t.start()
 
+                clones_list.append(clones)
                 coord.join(threads)
 
-            clones_list.append(clones)
             coord.request_stop()
 
     def inner_loop(self, coord, elems_thread, batches, ind, end, data_size, eval_res, clones):
