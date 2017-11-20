@@ -11,7 +11,7 @@ class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
         self.scope = 'seq2seq_'
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
         with tf.variable_scope(self.scope):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
@@ -21,6 +21,7 @@ class Seq2seq:
             self.create_model()
 
         self.seq2seq_vars = tf.global_variables(self.scope)
+        time.sleep(15)
 
     def create_model(self):
         self.create_placeholders()
