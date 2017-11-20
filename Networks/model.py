@@ -134,7 +134,6 @@ class Seq2seq:
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
-        self.amount = 0
         print(len(sequence))
         threads = [threading.Thread(
             target=self.loop,
@@ -148,9 +147,6 @@ class Seq2seq:
         coord.join(threads)
 
         print()
-        print('Enc_fs: {}'.format(len(encoder_fs)))
-        print('Amount: {}'.format(self.amount))
-        time.sleep(5)
         return encoder_fs
 
     def loop(self, coord, begin, elems_thr, sequence, encoder_fs):
@@ -158,9 +154,8 @@ class Seq2seq:
             end = begin + elems_thr
             if end > len(sequence): 
                 end = len(sequence) - 1
-            for num in range(begin, end):
+            for num in range(begin, end + 1):
                 print('\rEncoded {}/{}'.format(num, len(sequence)), end='')
-                self.amount += 1
                 feed_dict = {self.encoder_inputs: [sequence[num]]}
                 encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
 
