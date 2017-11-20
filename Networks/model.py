@@ -310,7 +310,6 @@ class SiameseNetwork:
             threads_num = 10
 
             for met in range(0, data_size, threads_num):
-                print('\rStep {}/{}'.format(met, data_size), end='')
                 threads = [threading.Thread(
                         target=self.loop,
                         args=(coord, eval_batches, i + met, data_size, eval_res, clones_list))
@@ -321,7 +320,6 @@ class SiameseNetwork:
                     t.start()
 
                 coord.join(threads)
-                print()
                 
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
@@ -347,19 +345,19 @@ class SiameseNetwork:
             else:
                 print('Created thread')
                 elems_thread = int(elems_thread)
-                threads = [threading.Thread(
+                inner_threads = [threading.Thread(
                         target=self.inner_loop,
                         args=(coord, elems_thread, batches, ind,
                               (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
-                    for i in range(0, threads_num, -1)
+                    for i in range(threads_num, 0, -1)
                 ]
 
-                for t in threads:
+                for t in inner_threads:
                     t.start()
 
                 print('Append to clones_list {}'.format(len(clone.clones)))
                 clones_list.append(clone)
-                coord.join(threads)
+                coord.join(inner_threads)
 
             coord.request_stop()
 
