@@ -150,16 +150,16 @@ class Seq2seq:
         return encoder_fs
 
     def loop(self, coord, begin, elems_thr, sequence, encoder_fs):
-        while not coord.should_stop():
+        # while not coord.should_stop():
             end = begin + elems_thr
             if end > len(sequence): 
                 end = len(sequence) - 1
             for num in range(begin, end + 1):
-                print('\rEncoded {}/{}'.format(num, len(sequence)), end='')
                 feed_dict = {self.encoder_inputs: [sequence[num]]}
                 encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+                print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
-            coord.request_stop()
+            # coord.request_stop()
 
     def decode(self, sequence):
         decoder_outp = []
@@ -330,50 +330,47 @@ class SiameseNetwork:
             sys.exit(1)
 
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
-        while not coord.should_stop():
-            clone = CloneClass(batches[ind])
-            threads_num = 10
-            elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
-            if elems_thread < 1:
-                for n in range(data_size - 1, ind + 1, -1):
-                    print('\rCheck {}/{}'.format(n, data_size - 1), end='')
-                    if ind == n:
-                        continue
-                    eval_res += self.step(batches[ind], batches[n], None, clone)
-                    print('Append to clones_list {}'.format(len(clone.clones)))
-                    clones_list.append(clone)
-            else:
-                print('Created thread')
-                elems_thread = int(elems_thread)
-                inner_threads = [threading.Thread(
-                        target=self.inner_loop,
-                        args=(coord, elems_thread, batches, ind,
-                              (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
-                    for i in range(threads_num, 0, -1)
-                ]
-
-                for t in inner_threads:
-                    t.start()
-
-                print('Append to clones_list {}'.format(len(clone.clones)))
-                clones_list.append(clone)
-                coord.join(inner_threads)
-
-            coord.request_stop()
-
-    def inner_loop(self, coord, elems_thread, batches, ind, end, data_size, eval_res, clones):
-        while not coord.should_stop:
-            start = end - elems_thread
-            if start < ind + 1:
-                start = ind + 1
-
-            for n in range(end, start, -1):
-                print('Created inner thread')
+        # while not coord.should_stop():
+        clone = CloneClass(batches[ind])
+        threads_num = 10
+        elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
+        if elems_thread < 1:
+            for n in range(data_size - 1, ind + 1, -1):
                 print('\rCheck {}/{}'.format(n, data_size - 1), end='')
                 if ind == n:
                     continue
-                eval_res += self.step(batches[ind], batches[n], None, clones)
-            coord.request_stop()
+                eval_res += self.step(batches[ind], batches[n], None, clone)
+                clones_list.append(clone)
+        else:
+            elems_thread = int(elems_thread)
+            inner_coord = tf.train.Coordinator()
+            inner_threads = [threading.Thread(
+                    target=self.inner_loop,
+                    args=(inner_coord, elems_thread, batches, ind,
+                            (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
+                    for i in range(threads_num, 0, -1)
+            ]
+
+            for t in inner_threads:
+                t.start()
+
+            clones_list.append(clone)
+            inner_coord.join(inner_threads)
+
+          #  coord.request_stop()
+
+    def inner_loop(self, coord, elems_thread, batches, ind, end, data_size, eval_res, clones):
+#        while not coord.should_stop:
+        start = end - elems_thread
+        if start < ind + 1:
+            start = ind + 1
+
+        for n in range(end, start, -1):
+            print('\rCheck {}/{}'.format(n, data_size - 1), end='')
+            if ind == n:
+                continue
+            eval_res += self.step(batches[ind], batches[n], None, clones)
+            # coord.request_stop()
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
