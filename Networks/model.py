@@ -41,10 +41,10 @@ class Seq2seq:
     def create_embeddings(self):
             self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
                                           dtype=tf.float32, name='embeddings')
-            self.encoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs,
-                                                                  name='encoder_inputs_emb')
-            self.decoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs,
-                                                                  name='decoder_inputs_emb')
+            self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
+                # tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
+            self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
+                #tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
 
     def init_encoder(self):
             self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
