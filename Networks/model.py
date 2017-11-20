@@ -334,7 +334,6 @@ class SiameseNetwork:
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
         while not coord.should_stop():
             clone = CloneClass(batches[ind])
-            print('Created clone class')
             threads_num = 10
             elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
             if elems_thread < 1:
@@ -346,6 +345,7 @@ class SiameseNetwork:
                     print('Append to clones_list {}'.format(len(clone.clones)))
                     clones_list.append(clone)
             else:
+                print('Created thread')
                 elems_thread = int(elems_thread)
                 threads = [threading.Thread(
                         target=self.inner_loop,
@@ -370,11 +370,12 @@ class SiameseNetwork:
                 start = ind + 1
 
             for n in range(end, start, -1):
+                print('Created inner thread')
                 print('\rCheck {}/{}'.format(n, data_size - 1), end='')
                 if ind == n:
                     continue
                 eval_res += self.step(batches[ind], batches[n], None, clones)
-        coord.request_stop()
+            coord.request_stop()
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
