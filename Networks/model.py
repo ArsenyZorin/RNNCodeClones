@@ -11,7 +11,7 @@ class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
         self.scope = 'seq2seq_'
-        self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+        self.sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         with tf.variable_scope(self.scope):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
@@ -179,7 +179,7 @@ class Seq2seq:
 class SiameseNetwork:
     def __init__(self, sequence_length, batch_size, layers):
         self.scope = 'siamese_'
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         with tf.variable_scope(self.scope):
             self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
             self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
