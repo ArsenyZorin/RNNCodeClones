@@ -333,7 +333,8 @@ class SiameseNetwork:
 
     def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
         while not coord.should_stop():
-            clones = CloneClass(batches[ind])
+            clone = CloneClass(batches[ind])
+            print('Created clone class')
             threads_num = 10
             elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
             if elems_thread < 1:
@@ -341,21 +342,23 @@ class SiameseNetwork:
                     print('\rCheck {}/{}'.format(n, data_size - 1), end='')
                     if ind == n:
                         continue
-                    eval_res += self.step(batches[ind], batches[n], None, clones)
-                    clones_list.append(clones)
+                    eval_res += self.step(batches[ind], batches[n], None, clone)
+                    print('Append to clones_list {}'.format(len(clone.clones)))
+                    clones_list.append(clone)
             else:
                 elems_thread = int(elems_thread)
                 threads = [threading.Thread(
                         target=self.inner_loop,
                         args=(coord, elems_thread, batches, ind,
-                              (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clones))
+                              (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
                     for i in range(0, threads_num, -1)
                 ]
 
                 for t in threads:
                     t.start()
 
-                clones_list.append(clones)
+                print('Append to clones_list {}'.format(len(clone.clones)))
+                clones_list.append(clone)
                 coord.join(threads)
 
             coord.request_stop()
@@ -366,7 +369,7 @@ class SiameseNetwork:
             if start < ind + 1:
                 start = ind + 1
 
-            for n in range(end , start, -1):
+            for n in range(end, start, -1):
                 print('\rCheck {}/{}'.format(n, data_size - 1), end='')
                 if ind == n:
                     continue
