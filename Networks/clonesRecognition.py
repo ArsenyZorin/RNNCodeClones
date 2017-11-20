@@ -4,6 +4,7 @@ import shutil
 import json
 import os
 import time
+import logging
 from model import Seq2seq, SiameseNetwork
 
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
@@ -11,6 +12,15 @@ tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Director
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
+
+log = logging.getLogger('tensorflow')
+log.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh = logging.FileHandler('tensorflow.log')
+fh.setLevel(logging.INFO)
+fh.setFormatter(formatter)
+log.addHandler(fh)
 
 start = time.time()
 
