@@ -2,9 +2,10 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
+import threading
 from CloneClass import CloneClass
 from random import random
-
+import time
 
 class Seq2seq:
 
@@ -19,9 +20,7 @@ class Seq2seq:
             self.weights = weights
             self.create_model()
 
-        all_vars = tf.all_variables()
-        self.seq2seq_vars = [k for k in all_vars if k.name.startswith(self.scope)]
-        # self.seq2seq_vars = tf.global_variables(self.scope)
+        self.seq2seq_vars = tf.global_variables(self.scope)
 
     def create_model(self):
         self.create_placeholders()
@@ -130,14 +129,37 @@ class Seq2seq:
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
-        i = 1
-        for seq in sequence:
-            feed_dict = {self.encoder_inputs: [seq]}
-            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            print('\r{}/{}'.format(i, sequence.size), end='')
-            i += 1
+
+        threads_num = 100
+        coord = tf.train.Coordinator()
+
+        elems_in_tread = int(len(sequence) / threads_num)
+        print(len(sequence))
+        threads = [threading.Thread(
+            target=self.loop,
+            args=(coord, i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
+                for i in range(threads_num)
+        ]
+
+        for t in threads:
+            t.start()
+
+        coord.join(threads)
+
         print()
         return encoder_fs
+
+    def loop(self, coord, begin, elems_thr, sequence, encoder_fs):
+        # while not coord.should_stop():
+            end = begin + elems_thr
+            if end > len(sequence): 
+                end = len(sequence) - 1
+            for num in range(begin, end + 1):
+                feed_dict = {self.encoder_inputs: [sequence[num]]}
+                encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+                print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
+
+            # coord.request_stop()
 
     def decode(self, sequence):
         decoder_outp = []
@@ -167,9 +189,7 @@ class SiameseNetwork:
             self.init_out()
             self.loss_accuracy_init()
             self.sess.run(tf.global_variables_initializer())
-        # self.siam_vars = tf.global_variables(self.scope)
-        all_vars = tf.all_variables()
-        self.siam_vars = [k for k in all_vars if k.name.startswith(self.scope)]
+        self.siam_vars = tf.global_variables(self.scope)
 
     def init_out(self):
         self.out1 = self.rnn(self.input_x1, 'method1')
@@ -285,25 +305,72 @@ class SiameseNetwork:
 
             eval_res = []
             clones_list = []
-            step = 0
 
-            for i in range(data_size):
-                clones = CloneClass(eval_batches[i])
-                for n in range(data_size - 1, i + 1, -1):
-                    print('\rCheck {}/{} with {}/{}. Step({})'.format(i, data_size,
-                                                                      (data_size - n), data_size, step), end='')
-                    if i == n:
-                        continue
-                    step += 1
-                    eval_res += self.step(eval_batches[i], eval_batches[n], None, clones)
-                clones_list.append(clones)
+            coord = tf.train.Coordinator()
+            threads_num = 10
 
+            for met in range(0, data_size, threads_num):
+                threads = [threading.Thread(
+                        target=self.loop,
+                        args=(coord, eval_batches, i + met, data_size, eval_res, clones_list))
+                    for i in range(threads_num)
+                ]
+
+                for t in threads:
+                    t.start()
+
+                coord.join(threads)
+                
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
+            print('Clones list size: {}'.format(len(clones_list)))
             return clones_list
         else:
             print('Invalid evaluation')
             sys.exit(1)
+
+    def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
+        # while not coord.should_stop():
+        clone = CloneClass(batches[ind])
+        threads_num = 10
+        elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
+        if elems_thread < 1:
+            for n in range(data_size - 1, ind + 1, -1):
+                print('\rCheck {}/{}'.format(n, data_size - 1), end='')
+                if ind == n:
+                    continue
+                eval_res += self.step(batches[ind], batches[n], None, clone)
+                clones_list.append(clone)
+        else:
+            elems_thread = int(elems_thread)
+            inner_coord = tf.train.Coordinator()
+            inner_threads = [threading.Thread(
+                    target=self.inner_loop,
+                    args=(inner_coord, elems_thread, batches, ind,
+                            (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
+                    for i in range(threads_num, 0, -1)
+            ]
+
+            for t in inner_threads:
+                t.start()
+
+            clones_list.append(clone)
+            inner_coord.join(inner_threads)
+
+          #  coord.request_stop()
+
+    def inner_loop(self, coord, elems_thread, batches, ind, end, data_size, eval_res, clones):
+#        while not coord.should_stop:
+        start = end - elems_thread
+        if start < ind + 1:
+            start = ind + 1
+
+        for n in range(end, start, -1):
+            print('\rCheck {}/{}'.format(n, data_size - 1), end='')
+            if ind == n:
+                continue
+            eval_res += self.step(batches[ind], batches[n], None, clones)
+            # coord.request_stop()
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
