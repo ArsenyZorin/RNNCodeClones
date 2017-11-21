@@ -34,52 +34,52 @@ class Seq2seq:
         self.create_sess()
 
     def create_placeholders(self):
-            self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
-                                                 name='encoder_inputs')
-            self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
-                                                  name='decoder_targets')
-            self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
-                                                 name='decoder_inputs')
+        self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+                                                name='encoder_inputs')
+        self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
+                                                name='decoder_targets')
+        self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+                                                name='decoder_inputs')
 
     def create_embeddings(self):
-            self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
-                                          dtype=tf.float32, name='embeddings')
-            self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
+        self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
+                                        dtype=tf.float32, name='embeddings')
+        self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
                 # tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
-            self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
+        self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
                 #tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
 
     def init_encoder(self):
-            self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
-                self.encoder_cell, self.encoder_inputs_embedded,
-                dtype=tf.float32, time_major=True,)
+        self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
+            self.encoder_cell, self.encoder_inputs_embedded,
+            dtype=tf.float32, time_major=True,)
 
     def init_decoder(self):
-            self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
-                self.decoder_cell, self.decoder_inputs_embedded,
+        self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
+            self.decoder_cell, self.decoder_inputs_embedded,
                 initial_state=self.encoder_final_state,
                 dtype=tf.float32, time_major=True, scope='plain_decoder',)
 
-            self.decoder_logits = tf.contrib.layers.linear(self.decoder_outputs, self.vocab_size)
-            self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
+        self.decoder_logits = tf.contrib.layers.linear(self.decoder_outputs, self.vocab_size)
+        self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
 
     def init_optimizer(self):
-            self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                 labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
                 logits=self.decoder_logits, name='stepwise')
 
-            self.loss = tf.reduce_mean(self.stepwise_cross_entropy)
-            self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
+        self.loss = tf.reduce_mean(self.stepwise_cross_entropy)
+        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
     def make_train_inputs(self, input_seq, target_seq):
-            self.encoder_inputs_, _ = helpers.batch(input_seq)
-            self.decoder_targets_, _ = helpers.batch(target_seq)
-            self.decoder_inputs_, _ = helpers.batch(input_seq)
-            return {
-                self.encoder_inputs: self.encoder_inputs_,
-                self.decoder_inputs: self.decoder_inputs_,
-                self.decoder_targets: self.decoder_targets_,
-            }
+        self.encoder_inputs_, _ = helpers.batch(input_seq)
+        self.decoder_targets_, _ = helpers.batch(target_seq)
+        self.decoder_inputs_, _ = helpers.batch(input_seq)
+        return {
+            self.encoder_inputs: self.encoder_inputs_,
+            self.decoder_inputs: self.decoder_inputs_,
+            self.decoder_targets: self.decoder_targets_,
+        }
 
     def create_sess(self):
         self.sess.run(tf.global_variables_initializer())
@@ -314,11 +314,13 @@ class SiameseNetwork:
 
             coord = tf.train.Coordinator()
             threads_num = 10
+            self.iteration = 1
+            self.iter_amount = data_size * (data_size + 1) / 2
 
             for met in range(0, data_size, threads_num):
                 threads = [threading.Thread(
                         target=self.loop,
-                        args=(coord, eval_batches, i + met, data_size, eval_res, clones_list))
+                        args=(eval_batches, i + met, data_size, eval_res, clones_list))
                     for i in range(threads_num)
                 ]
 
@@ -335,8 +337,7 @@ class SiameseNetwork:
             print('Invalid evaluation')
             sys.exit(1)
 
-    def loop(self, coord, batches, ind, data_size, eval_res, clones_list):
-        # while not coord.should_stop():
+    def loop(self, batches, ind, data_size, eval_res, clones_list):
         clone = CloneClass(batches[ind])
         threads_num = 10
         elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
@@ -352,9 +353,9 @@ class SiameseNetwork:
             inner_coord = tf.train.Coordinator()
             inner_threads = [threading.Thread(
                     target=self.inner_loop,
-                    args=(inner_coord, elems_thread, batches, ind,
+                    args=(elems_thread, batches, ind,
                             (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
-                    for i in range(threads_num, 0, -1)
+                    for i in range(threads_num - 1, -1, -1)
             ]
 
             for t in inner_threads:
@@ -363,20 +364,21 @@ class SiameseNetwork:
             clones_list.append(clone)
             inner_coord.join(inner_threads)
 
-          #  coord.request_stop()
+    def inner_loop(self, elems_thread, batches, ind, end, data_size, eval_res, clones):
+        start = end - elems_thread + 1
 
-    def inner_loop(self, coord, elems_thread, batches, ind, end, data_size, eval_res, clones):
-#        while not coord.should_stop:
-        start = end - elems_thread
-        if start < ind + 1:
-            start = ind + 1
+        if start < elems_thread:
+            start = 0
+
+        if start < ind:
+            start = ind
 
         for n in range(end, start, -1):
-            print('\rCheck {}/{}'.format(n, data_size - 1), end='')
             if ind == n:
                 continue
             eval_res += self.step(batches[ind], batches[n], None, clones)
-            # coord.request_stop()
+            print('\rChecked: {}/{}'.format(self.iteration, self.iter_amount), end='')
+            self.iteration += 1
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
