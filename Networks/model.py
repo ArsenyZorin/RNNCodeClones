@@ -315,7 +315,7 @@ class SiameseNetwork:
             coord = tf.train.Coordinator()
             threads_num = 10
             self.iteration = 1
-            self.iter_amount = data_size * (data_size + 1) / 2
+            self.iter_amount = data_size + (data_size * (data_size + 1) / 2)
 
             for met in range(0, data_size, threads_num):
                 threads = [threading.Thread(
@@ -364,7 +364,7 @@ class SiameseNetwork:
             clones_list.append(clone)
             inner_coord.join(inner_threads)
 
-    def inner_loop(self, elems_thread, batches, ind, end, data_size, eval_res, clones):
+    def inner_loop(self, elems_thread, batches, ind, end, eval_res, clones):
         start = end - elems_thread + 1
 
         if start < elems_thread:
