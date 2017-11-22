@@ -5,7 +5,6 @@ import sys
 import threading
 from CloneClass import CloneClass
 from random import random
-import time
 
 class Seq2seq:
 
@@ -23,7 +22,6 @@ class Seq2seq:
         #self.seq2seq_vars = tf.global_variables(self.scope)
         all_vars = tf.all_variables()
         self.seq2seq_vars = [v for v in all_vars if v.name.startswith(self.scope)]
-        time.sleep(15)
 
     def create_model(self):
         self.create_placeholders()
@@ -137,7 +135,6 @@ class Seq2seq:
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
-        print(len(sequence))
         threads = [threading.Thread(
             target=self.loop,
             args=(coord, i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
@@ -306,11 +303,11 @@ class SiameseNetwork:
             print('Evaluation accuracy: {}'.format(percentage))
 
         elif input_x2 is None and answ is None:
-            eval_batches = np.asarray(input_x1)
+            eval_batches = set(np.asarray(input_x1))
             data_size = eval_batches.shape[0]
 
             eval_res = []
-            clones_list = []
+            clones_list = set()
 
             coord = tf.train.Coordinator()
             threads_num = 10
@@ -343,25 +340,25 @@ class SiameseNetwork:
         elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
         if elems_thread < 1:
             for n in range(data_size - 1, ind + 1, -1):
-                print('\rCheck {}/{}'.format(n, data_size - 1), end='')
+                print('\rChecked: {}/{}'.format(self.iteration, self.iter_amount), end='')
                 if ind == n:
                     continue
                 eval_res += self.step(batches[ind], batches[n], None, clone)
-                clones_list.append(clone)
+                clones_list.add(clone)
         else:
             elems_thread = int(elems_thread)
             inner_coord = tf.train.Coordinator()
             inner_threads = [threading.Thread(
                     target=self.inner_loop,
                     args=(elems_thread, batches, ind,
-                            (data_size - 1) - i * (elems_thread - 1), data_size, eval_res, clone))
+                            (data_size - 1) - i * (elems_thread - 1), eval_res, clone))
                     for i in range(threads_num - 1, -1, -1)
             ]
 
             for t in inner_threads:
                 t.start()
 
-            clones_list.append(clone)
+            clones_list.add(clone)
             inner_coord.join(inner_threads)
 
     def inner_loop(self, elems_thread, batches, ind, end, eval_res, clones):
