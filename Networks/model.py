@@ -301,7 +301,7 @@ class SiameseNetwork:
             print('Evaluation accuracy: {}'.format(percentage))
 
         elif input_x2 is None and answ is None:
-            eval_batches = set(np.asarray(input_x1))
+            eval_batches = np.asarray(input_x1)
             data_size = eval_batches.shape[0]
 
             eval_res = []
