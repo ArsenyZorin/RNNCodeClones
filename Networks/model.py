@@ -6,6 +6,7 @@ import threading
 from CloneClass import CloneClass
 from random import random
 
+
 class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
@@ -43,9 +44,7 @@ class Seq2seq:
         self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
                                         dtype=tf.float32, name='embeddings')
         self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
-                # tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
         self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
-                #tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
 
     def init_encoder(self):
         self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
@@ -130,14 +129,13 @@ class Seq2seq:
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
-
-        threads_num = 100
+        threads_num = 10
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
         threads = [threading.Thread(
             target=self.loop,
-            args=(coord, i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
+            args=(i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
                 for i in range(threads_num)
         ]
 
@@ -149,15 +147,14 @@ class Seq2seq:
         print()
         return encoder_fs
 
-    def loop(self, coord, begin, elems_thr, sequence, encoder_fs):
-        # while not coord.should_stop():
-            end = begin + elems_thr
-            if end > len(sequence): 
-                end = len(sequence) - 1
-            for num in range(begin, end + 1):
-                feed_dict = {self.encoder_inputs: [sequence[num]]}
-                encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-                print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
+    def loop(self, begin, elems_thr, sequence, encoder_fs):
+        end = begin + elems_thr
+        if end > len(sequence):
+            end = len(sequence) - 1
+        for num in range(begin, end + 1):
+            feed_dict = {self.encoder_inputs: [sequence[num]]}
+            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+            print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
             # coord.request_stop()
 
@@ -310,7 +307,7 @@ class SiameseNetwork:
             clones_list = set()
 
             coord = tf.train.Coordinator()
-            threads_num = 10
+            threads_num = 3
             self.iteration = 1
             self.iter_amount = int(data_size + (data_size * (data_size + 1) / 2))
 
@@ -382,7 +379,7 @@ class SiameseNetwork:
         x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
         feed_dict = self.dict_feed(x1_batch, x2_batch)
-        dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+        dist = self.sess.run([self.distance], feed_dict)
         if answ is not None:
             print('Expected: {}\t Got {}:'.format(answ, dist))
             if int(answ) == int(dist):
