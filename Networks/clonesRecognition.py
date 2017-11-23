@@ -5,6 +5,7 @@ import json
 import os
 import time
 import logging
+import itertools
 from model import Seq2seq, SiameseNetwork
 
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
@@ -129,7 +130,7 @@ try:
     decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
     seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights)
-    lstm_model = SiameseNetwork(layers, batch_size, layers)
+    lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers)
 
     if 'train' == FLAGS.type:
         train()
