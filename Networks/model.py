@@ -2,6 +2,7 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
+import itertools
 import threading
 from CloneClass import CloneClass
 from random import random
@@ -304,25 +305,35 @@ class SiameseNetwork:
             data_size = eval_batches.shape[0]
 
             eval_res = []
-            clones_list = set()
+            clones_list = []
 
             coord = tf.train.Coordinator()
             threads_num = 3
             self.iteration = 1
             self.iter_amount = int(data_size + (data_size * (data_size + 1) / 2))
 
-            for met in range(0, data_size, threads_num):
-                threads = [threading.Thread(
-                        target=self.loop,
-                        args=(eval_batches, i + met, data_size, eval_res, clones_list))
-                    for i in range(threads_num)
-                ]
+            combs = itertools.combinations(eval_batches, 2)
+            length = len(list(combs))
 
-                for t in threads:
-                    t.start()
+            for x,y in combs:
+                clone = CloneClass(x)
+                eval_res += self.step(x, y, None, clone)
+                print('\rChecked: {}/{}'.format(self.iteration, length), end='')
+                self.iteration += 1
+                clones_list.append(clone)
 
-                coord.join(threads)
-                
+#            for met in range(0, data_size, threads_num):
+#                threads = [threading.Thread(
+#                        target=self.loop,
+#                        args=(eval_batches, i + met, data_size, eval_res, clones_list))
+#                    for i in range(threads_num)
+#                ]
+
+#                for t in threads:
+#                   t.start()
+
+#               coord.join(threads)
+
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
             print('Clones list size: {}'.format(len(clones_list)))
