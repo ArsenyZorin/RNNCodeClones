@@ -133,7 +133,7 @@ class Seq2seq:
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
-        threads_num = 10
+        threads_num = 3
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
@@ -153,14 +153,12 @@ class Seq2seq:
 
     def loop(self, begin, elems_thr, sequence, encoder_fs):
         end = begin + elems_thr
-        if end > len(sequence):
+        if end >= len(sequence):
             end = len(sequence) - 1
         for num in range(begin, end + 1):
             feed_dict = {self.encoder_inputs: [sequence[num]]}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
-
-            # coord.request_stop()
 
     def decode(self, sequence):
         decoder_outp = []
