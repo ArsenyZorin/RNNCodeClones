@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import itertools
 import threading
+import math
 from CloneClass import CloneClass
 from random import random
 
@@ -313,9 +314,9 @@ class SiameseNetwork:
             self.iter_amount = int(data_size + (data_size * (data_size + 1) / 2))
 
             combs = itertools.combinations(eval_batches, 2)
-            length = len(list(combs))
+            length = math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2))
 
-            for x,y in combs:
+            for x, y in combs:
                 clone = CloneClass(x)
                 eval_res += self.step(x, y, None, clone)
                 print('\rChecked: {}/{}'.format(self.iteration, length), end='')
@@ -396,7 +397,7 @@ class SiameseNetwork:
             if int(answ) == int(dist):
                 eval_res.append(1)
         else:
-            if 1 == int(dist):
+            if 1 == int(round(dist[0])):
                 eval_res.append(1)
                 clones.append(x2)
 
