@@ -133,7 +133,7 @@ class Seq2seq:
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
-        threads_num = 3
+        threads_num = 20
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
@@ -298,7 +298,7 @@ class SiameseNetwork:
             step = 0
             for i in range(data_size):
                 step += 1
-                eval_res += self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], eval_res)
+                eval_res += self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2])  # , eval_res)
 
             percentage = len(eval_res) / data_size
             print('Evaluation accuracy: {}'.format(percentage))
@@ -310,20 +310,23 @@ class SiameseNetwork:
             eval_res = []
             clones_list = []
 
-            coord = tf.train.Coordinator()
-            threads_num = 3
+            threads_num = 20
             self.iteration = 1
+            self.length = int(math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2)))
 
-            combs = itertools.combinations(eval_batches, 2)
-            length = int(math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2)))
+            elems_in_tread = int(data_size / threads_num)
 
-            for x, y in combs:
-                clone = CloneClass(x)
-                eval_res += self.step(x, y, None, clone)
-                print('\rChecked: {}/{}'.format(self.iteration, length), end='')
-                self.iteration += 1
-                clones_list.append(clone)
+            coord = tf.train.Coordinator()
+            threads = [threading.Thread(
+                    target=self.loop,
+                    args=(coord, eval_batches, i * (elems_in_tread + 1), elems_in_tread, eval_res))
+                        for i in range(threads_num)
+            ]
 
+            for t in threads:
+                t.start()
+
+            coord.join(threads)
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
             print('Clones list size: {}'.format(len(clones_list)))
@@ -332,7 +335,26 @@ class SiameseNetwork:
             print('Invalid evaluation')
             sys.exit(1)
 
-    def step(self, x1, x2, answ, clones):
+    def loop(self, coord, batches, begin, elems_thr, eval_res):
+        while not coord.should_stop():
+            try:
+                end = begin + elems_thr
+                if end >= len(batches):
+                    end = len(batches) - 1
+                print('[{}:{}]'.format(begin, end + 1))
+                combs = itertools.combinations(batches[begin:end + 1], 2)
+                for x, y in combs:
+                    # clone = CloneClass(x)
+                    eval_res += self.step(x, y, None)  # , clone)
+                    print('\rChecked: {}/{}'.format(self.iteration, self.length), end='')
+                    self.iteration += 1
+                    # clones_list.append(clone)
+            except KeyboardInterrupt:
+                coord.request_stop()
+            finally:
+                coord.request_stop()
+
+    def step(self, x1, x2, answ):  # , clones):
         eval_res = []
         x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
@@ -345,7 +367,7 @@ class SiameseNetwork:
         else:
             if 1 == int(round(dist[0])):
                 eval_res.append(1)
-                clones.append(x2)
+                # clones.append(x2)
 
         return eval_res
 
