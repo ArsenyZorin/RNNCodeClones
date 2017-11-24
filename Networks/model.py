@@ -13,7 +13,9 @@ class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
         self.scope = 'seq2seq_'
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
         with tf.variable_scope(self.scope):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
@@ -175,7 +177,9 @@ class Seq2seq:
 class SiameseNetwork:
     def __init__(self, sequence_length, batch_size, layers):
         self.scope = 'siamese_'
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
         with tf.variable_scope(self.scope):
             self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
             self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
@@ -311,10 +315,9 @@ class SiameseNetwork:
             coord = tf.train.Coordinator()
             threads_num = 3
             self.iteration = 1
-            self.iter_amount = int(data_size + (data_size * (data_size + 1) / 2))
 
             combs = itertools.combinations(eval_batches, 2)
-            length = math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2))
+            length = int(math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2)))
 
             for x, y in combs:
                 clone = CloneClass(x)
@@ -323,18 +326,6 @@ class SiameseNetwork:
                 self.iteration += 1
                 clones_list.append(clone)
 
-#            for met in range(0, data_size, threads_num):
-#                threads = [threading.Thread(
-#                        target=self.loop,
-#                        args=(eval_batches, i + met, data_size, eval_res, clones_list))
-#                    for i in range(threads_num)
-#                ]
-
-#                for t in threads:
-#                   t.start()
-
-#               coord.join(threads)
-
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
             print('Clones list size: {}'.format(len(clones_list)))
@@ -342,49 +333,6 @@ class SiameseNetwork:
         else:
             print('Invalid evaluation')
             sys.exit(1)
-
-    def loop(self, batches, ind, data_size, eval_res, clones_list):
-        clone = CloneClass(batches[ind])
-        threads_num = 10
-        elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
-        if elems_thread < 1:
-            for n in range(data_size - 1, ind + 1, -1):
-                print('\rChecked: {}/{}'.format(self.iteration, self.iter_amount), end='')
-                if ind == n:
-                    continue
-                eval_res += self.step(batches[ind], batches[n], None, clone)
-                clones_list.add(clone)
-        else:
-            elems_thread = int(elems_thread)
-            inner_coord = tf.train.Coordinator()
-            inner_threads = [threading.Thread(
-                    target=self.inner_loop,
-                    args=(elems_thread, batches, ind,
-                            (data_size - 1) - i * (elems_thread - 1), eval_res, clone))
-                    for i in range(threads_num - 1, -1, -1)
-            ]
-
-            for t in inner_threads:
-                t.start()
-
-            clones_list.add(clone)
-            inner_coord.join(inner_threads)
-
-    def inner_loop(self, elems_thread, batches, ind, end, eval_res, clones):
-        start = end - elems_thread + 1
-
-        if start < elems_thread:
-            start = 0
-
-        if start < ind:
-            start = ind
-
-        for n in range(end, start, -1):
-            if ind == n:
-                continue
-            eval_res += self.step(batches[ind], batches[n], None, clones)
-            print('\rChecked: {}/{}'.format(self.iteration, self.iter_amount), end='')
-            self.iteration += 1
 
     def step(self, x1, x2, answ, clones):
         eval_res = []
