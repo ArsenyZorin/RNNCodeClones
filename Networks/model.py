@@ -95,7 +95,6 @@ class Seq2seq:
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
                                            batch_size=batch_size)
 
-        self.restore(directory + '/seq2seq.ckpt')
         loss_track = []
         for batch in range(max_batches + 1):
             seq_batch = next(batches)
@@ -130,6 +129,8 @@ class Seq2seq:
             self.sess = sess
             print('model restored from {}'.format(directory))
             return self.sess
+        else:
+            return None
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
@@ -269,8 +270,6 @@ class SiameseNetwork:
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
 
-        self.restore(directory + '/siam.ckpt')
-
         print(data_size)
         for nn in range(data_size):
             x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
@@ -378,3 +377,4 @@ class SiameseNetwork:
             self.sess = sess
             print('model restored from {}'.format(directory))
             return self.sess
+        return None
