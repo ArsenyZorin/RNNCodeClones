@@ -2,7 +2,9 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
+import itertools
 import threading
+import math
 from CloneClass import CloneClass
 from random import random
 
@@ -11,7 +13,9 @@ class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
         self.scope = 'seq2seq_'
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
         with tf.variable_scope(self.scope):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
@@ -91,7 +95,6 @@ class Seq2seq:
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
                                            batch_size=batch_size)
 
-        self.restore(directory + '/seq2seq.ckpt')
         loss_track = []
         for batch in range(max_batches + 1):
             seq_batch = next(batches)
@@ -126,6 +129,8 @@ class Seq2seq:
             self.sess = sess
             print('model restored from {}'.format(directory))
             return self.sess
+        else:
+            return None
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
@@ -149,14 +154,12 @@ class Seq2seq:
 
     def loop(self, begin, elems_thr, sequence, encoder_fs):
         end = begin + elems_thr
-        if end > len(sequence):
+        if end >= len(sequence):
             end = len(sequence) - 1
         for num in range(begin, end + 1):
-            feed_dict = {self.encoder_inputs: [sequence[num]]}
+            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
-
-            # coord.request_stop()
 
     def decode(self, sequence):
         decoder_outp = []
@@ -173,7 +176,9 @@ class Seq2seq:
 class SiameseNetwork:
     def __init__(self, sequence_length, batch_size, layers):
         self.scope = 'siamese_'
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
         with tf.variable_scope(self.scope):
             self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
             self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
@@ -265,8 +270,6 @@ class SiameseNetwork:
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
 
-        self.restore(directory + '/siam.ckpt')
-
         print(data_size)
         for nn in range(data_size):
             x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
@@ -294,35 +297,35 @@ class SiameseNetwork:
             step = 0
             for i in range(data_size):
                 step += 1
-                eval_res += self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], eval_res)
+                eval_res += self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2])  # , eval_res)
 
             percentage = len(eval_res) / data_size
             print('Evaluation accuracy: {}'.format(percentage))
 
         elif input_x2 is None and answ is None:
-            eval_batches = set(np.asarray(input_x1))
+            eval_batches = np.asarray(input_x1)
             data_size = eval_batches.shape[0]
 
             eval_res = []
-            clones_list = set()
+            clones_list = []
+
+            threads_num = 20
+            self.iteration = 1
+            self.length = int(math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2)))
+
+            elems_in_tread = int(data_size / threads_num)
 
             coord = tf.train.Coordinator()
-            threads_num = 3
-            self.iteration = 1
-            self.iter_amount = int(data_size + (data_size * (data_size + 1) / 2))
+            threads = [threading.Thread(
+                    target=self.loop,
+                    args=(coord, eval_batches, i * (elems_in_tread + 1), elems_in_tread, eval_res))
+                        for i in range(threads_num)
+            ]
 
-            for met in range(0, data_size, threads_num):
-                threads = [threading.Thread(
-                        target=self.loop,
-                        args=(eval_batches, i + met, data_size, eval_res, clones_list))
-                    for i in range(threads_num)
-                ]
+            for t in threads:
+                t.start()
 
-                for t in threads:
-                    t.start()
-
-                coord.join(threads)
-                
+            coord.join(threads)
             percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
             print('Clones list size: {}'.format(len(clones_list)))
@@ -331,50 +334,25 @@ class SiameseNetwork:
             print('Invalid evaluation')
             sys.exit(1)
 
-    def loop(self, batches, ind, data_size, eval_res, clones_list):
-        clone = CloneClass(batches[ind])
-        threads_num = 10
-        elems_thread = ((data_size - 1) - (ind + 1)) / threads_num
-        if elems_thread < 1:
-            for n in range(data_size - 1, ind + 1, -1):
-                print('\rChecked: {}/{}'.format(self.iteration, self.iter_amount), end='')
-                if ind == n:
-                    continue
-                eval_res += self.step(batches[ind], batches[n], None, clone)
-                clones_list.add(clone)
-        else:
-            elems_thread = int(elems_thread)
-            inner_coord = tf.train.Coordinator()
-            inner_threads = [threading.Thread(
-                    target=self.inner_loop,
-                    args=(elems_thread, batches, ind,
-                            (data_size - 1) - i * (elems_thread - 1), eval_res, clone))
-                    for i in range(threads_num - 1, -1, -1)
-            ]
+    def loop(self, coord, batches, begin, elems_thr, eval_res):
+        while not coord.should_stop():
+            try:
+                end = begin + elems_thr
+                if end >= len(batches):
+                    end = len(batches) - 1
+                combs = itertools.combinations(batches[begin:end + 1], 2)
+                for x, y in combs:
+                    # clone = CloneClass(x)
+                    eval_res += self.step(x, y, None)  # , clone)
+                    print('\rChecked: {}/{}'.format(self.iteration, self.length), end='')
+                    self.iteration += 1
+                    # clones_list.append(clone)
+            except KeyboardInterrupt:
+                coord.request_stop()
+            finally:
+                coord.request_stop()
 
-            for t in inner_threads:
-                t.start()
-
-            clones_list.add(clone)
-            inner_coord.join(inner_threads)
-
-    def inner_loop(self, elems_thread, batches, ind, end, eval_res, clones):
-        start = end - elems_thread + 1
-
-        if start < elems_thread:
-            start = 0
-
-        if start < ind:
-            start = ind
-
-        for n in range(end, start, -1):
-            if ind == n:
-                continue
-            eval_res += self.step(batches[ind], batches[n], None, clones)
-            print('\rChecked: {}/{}'.format(self.iteration, self.iter_amount), end='')
-            self.iteration += 1
-
-    def step(self, x1, x2, answ, clones):
+    def step(self, x1, x2, answ):  # , clones):
         eval_res = []
         x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
@@ -385,9 +363,9 @@ class SiameseNetwork:
             if int(answ) == int(dist):
                 eval_res.append(1)
         else:
-            if 1 == int(dist):
+            if 1 == int(round(dist[0])):
                 eval_res.append(1)
-                clones.append(x2)
+                # clones.append(x2)
 
         return eval_res
 
@@ -398,3 +376,4 @@ class SiameseNetwork:
             self.sess = sess
             print('model restored from {}'.format(directory))
             return self.sess
+        return None
