@@ -5,7 +5,6 @@ import json
 import os
 import time
 import logging
-import itertools
 from model import Seq2seq, SiameseNetwork
 
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')

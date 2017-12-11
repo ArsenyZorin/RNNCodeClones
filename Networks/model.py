@@ -340,7 +340,6 @@ class SiameseNetwork:
                 end = begin + elems_thr
                 if end >= len(batches):
                     end = len(batches) - 1
-                print('[{}:{}]'.format(begin, end + 1))
                 combs = itertools.combinations(batches[begin:end + 1], 2)
                 for x, y in combs:
                     # clone = CloneClass(x)
