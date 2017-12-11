@@ -5,7 +5,6 @@ import json
 import os
 import time
 import logging
-import itertools
 from model import Seq2seq, SiameseNetwork
 
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
@@ -61,9 +60,15 @@ try:
 
 
     def train():
+        seq2seqtrain()
+        siamtrain()
+
+
+    def seq2seqtrain():
         seq2seq_model.train(length_from, length_to, vocab_lower, vocab_size,
                             batch_size, max_batches, batches_in_epoch, directory_seq2seq)
 
+    def siamtrain():
         origin_seq_file = open(FLAGS.data + '/vectors/indiciesOriginCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
 
@@ -86,10 +91,6 @@ try:
         mutated_encoder_states = seq2seq_model.get_encoder_status(np.append(mutated_seq, nonclone_seq))
         answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-        # origin_encoder_states = seq2seq_model.get_encoder_status(orig_seq[:30000])
-        # mutated_encoder_states = seq2seq_model.get_encoder_status(np.append(mutated_seq[:20000], nonclone_seq[:10000]))
-        # answ = np.append(np.zeros(20000), np.ones(10000), axis=0)
-
         eval_orig_encoder_states = seq2seq_model.get_encoder_status(np.append(eval_seq, eval_seq[:eval_nonclone.shape[0]]))
         eval_clone_encoder_states = seq2seq_model.get_encoder_status(np.append(eval_mutated, eval_nonclone))
         eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0]))
@@ -101,10 +102,13 @@ try:
         lstm_model.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ)
 
     def eval():
-        seq2seq_model.restore(directory_seq2seq + '/seq2seq.ckpt')
+        if seq2seq_model.restore(directory_seq2seq + '/seq2seq.ckpt') is None:
+            seq2seqtrain()
         origin_seq_file = open(FLAGS.data + '/vectors/indiciesOriginCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
         encoder_states = seq2seq_model.get_encoder_status(orig_seq)
+        if lstm_model.restore(directory_lstm) is None:
+            siamtrain()
         lstm_model.eval(encoder_states)
 
     weights_file = open(FLAGS.data + '/networks/word2vec/pretrainedWeights', 'r')
