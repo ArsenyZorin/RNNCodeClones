@@ -27,9 +27,8 @@ class Seq2seq:
         self.seq2seq_vars = tf.global_variables(self.scope)
 
     def create_model(self):
-        with tf.device('/cpu:0'):
-            self.create_placeholders()
-            self.create_embeddings()
+        self.create_placeholders()
+        self.create_embeddings()
 
         self.init_encoder()
         self.init_decoder()
