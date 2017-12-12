@@ -118,9 +118,9 @@ try:
     vocab_lower = 2
 
     length_from = 1
-    length_to = 1000
+    length_to = 100
 
-    batch_size = 100
+    batch_size = 1000
     max_batches = 20000
     batches_in_epoch = 1000
 
