@@ -25,8 +25,6 @@ class Seq2seq:
             self.create_model()
 
         self.seq2seq_vars = tf.global_variables(self.scope)
-#        all_vars = tf.all_variables()
-#        self.seq2seq_vars = [v for v in all_vars if v.name.startswith(self.scope)]
 
     def create_model(self):
         self.create_placeholders()
@@ -37,16 +35,19 @@ class Seq2seq:
         self.create_sess()
 
     def create_placeholders(self):
-        self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+        with tf.device('/cpu:0'):
+            self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
                                                 name='encoder_inputs')
-        self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
+            self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
                                                 name='decoder_targets')
-        self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+            self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
                                                 name='decoder_inputs')
 
     def create_embeddings(self):
-        self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
+        with tf.device('/cpu:0'):
+            self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
                                         dtype=tf.float32, name='embeddings')
+
         self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
         self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
 
