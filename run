@@ -1,1 +1,4 @@
+mvn initialize -f TreeMutator/ && mvn clean package -f TreeMutator/
+
 cat run_script TreeMutator/target/TreeMutator-0.1-jar-with-dependencies.jar > rnncodeclones && chmod +x rnncodeclones 
+
