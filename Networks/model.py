@@ -272,7 +272,8 @@ class SiameseNetwork:
 
         print(data_size)
         for nn in range(data_size):
-            x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
+            # x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
+            x1_batch, x2_batch = batches[nn][0], batches[nn][1]
             y_batch = batches[nn][2]
 
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
