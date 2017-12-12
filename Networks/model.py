@@ -99,17 +99,14 @@ class Seq2seq:
         for batch in range(max_batches + 1):
             seq_batch = next(batches)
             fd = self.make_train_inputs(seq_batch, seq_batch)
-
             _, l = self.sess.run([self.train_op, self.loss], fd)
-
             loss_track.append(l)
-
-            current_loss = self.sess.run(self.loss, fd)
-            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end='')
+#            current_loss = self.sess.run(self.loss, fd)
+            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(l), end='')
 
             if batch == 0 or batch % batches_in_epoch == 0:
                 print('\nbatch {}'.format(batch))
-                print('  minibatch loss: {}'.format(current_loss))
+                print('  minibatch loss: {}'.format(l))
                 predict_ = self.sess.run(self.decoder_prediction, fd)
                 for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
                     print('  sample {}:'.format(i + 1))
@@ -159,8 +156,11 @@ class Seq2seq:
         if end >= len(sequence):
             end = len(sequence) - 1
         for num in range(begin, end + 1):
-            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
-            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+            fd = self.make_train_inputs(np.transpose(sequence[num]), np.transpose(sequence[num]))
+#            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
+            #encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+            _, l = self.sess.run([self.train_op, self.loss], fd)
+            print('\rloss: ' + str(l), end='')
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
     def decode(self, sequence):
