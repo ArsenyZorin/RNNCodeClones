@@ -97,10 +97,15 @@ class Seq2seq:
 
         loss_track = []
         for batch in range(max_batches + 1):
-            seq_batch = next(batches)
-            fd = self.make_train_inputs(seq_batch, seq_batch)
+            with tf.device('/cpu:0'):
+                seq_batch = next(batches)
+                fd = self.make_train_inputs(seq_batch, seq_batch)
+
             _, l = self.sess.run([self.train_op, self.loss], fd)
-            loss_track.append(l)
+
+            with tf.device('/cpu:0'):
+                loss_track.append(l)
+
             current_loss = self.sess.run(self.loss, fd)
             print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end='')
 
@@ -143,7 +148,6 @@ class Seq2seq:
             args=(i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
                 for i in range(threads_num)
         ]
-
         for t in threads:
             t.start()
 
