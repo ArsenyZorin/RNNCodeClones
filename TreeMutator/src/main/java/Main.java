@@ -78,7 +78,7 @@ public class Main {
         System.out.println(path);
 
         String pythonArgs = "--type full --data " + args.getOutputDir();
-        pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
+//        pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
     }
 
     public Main getMain() {
