@@ -27,25 +27,25 @@ class Seq2seq:
         self.seq2seq_vars = tf.global_variables(self.scope)
 
     def create_model(self):
-        self.create_placeholders()
-        self.create_embeddings()
+        with tf.device('/cpu:0'):
+            self.create_placeholders()
+            self.create_embeddings()
+
         self.init_encoder()
         self.init_decoder()
         self.init_optimizer()
         self.create_sess()
 
     def create_placeholders(self):
-        with tf.device('/cpu:0'):
-            self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+        self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
                                                 name='encoder_inputs')
-            self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
+        self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
                                                 name='decoder_targets')
-            self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
+        self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
                                                 name='decoder_inputs')
 
     def create_embeddings(self):
-        with tf.device('/cpu:0'):
-            self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
+        self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
                                         dtype=tf.float32, name='embeddings')
 
         self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
@@ -98,14 +98,12 @@ class Seq2seq:
 
         loss_track = []
         for batch in range(max_batches + 1):
-            with tf.device('/cpu:0'):
-                seq_batch = next(batches)
-                fd = self.make_train_inputs(seq_batch, seq_batch)
+            seq_batch = next(batches)
+            fd = self.make_train_inputs(seq_batch, seq_batch)
 
             _, l = self.sess.run([self.train_op, self.loss], fd)
 
-            with tf.device('/cpu:0'):
-                loss_track.append(l)
+            loss_track.append(l)
 
             current_loss = self.sess.run(self.loss, fd)
             print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end='')
