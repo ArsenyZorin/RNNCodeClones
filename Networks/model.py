@@ -5,18 +5,19 @@ import sys
 import itertools
 import threading
 import math
-from CloneClass import CloneClass
+from cloneClass import CloneClass
 from random import random
 
 
 class Seq2seq:
 
-    def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
+    def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, device):
         self.scope = 'seq2seq_'
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
-        with tf.variable_scope(self.scope):
+        self.device = device
+        with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
             self.vocab_size = vocab_size
@@ -51,9 +52,10 @@ class Seq2seq:
         self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
 
     def init_encoder(self):
-        self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
-            self.encoder_cell, self.encoder_inputs_embedded,
-            dtype=tf.float32, time_major=True,)
+        with tf.device(self.device):
+            self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
+                self.encoder_cell, self.encoder_inputs_embedded,
+                dtype=tf.float32, time_major=True,)
 
     def init_decoder(self):
         self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
@@ -158,7 +160,6 @@ class Seq2seq:
         for num in range(begin, end + 1):
             feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            _, l = self.sess.run([self.train_op, self.loss], feed_dict)
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
     def decode(self, sequence):
