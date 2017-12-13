@@ -2,7 +2,7 @@ package preproc;
 
 import arguments.EvalType;
 import com.google.gson.Gson;
-import org.bytedeco.javacpp.opencv_ml;
+import gitrepos.Repository;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.text.sentenceiterator.CollectionSentenceIterator;
@@ -19,18 +19,17 @@ import java.util.List;
 public class Embedding {
     Word2Vec mainVec;
     TreeMutator treeMutator;
-    String workingDir = System.getProperty("user.dir");
+    String workingDir;
     File ideaRepo;
 
     public Embedding(TreeMutator treeMutator, String evalType, String outputDir) {
         this.treeMutator = treeMutator;
+        this.workingDir = outputDir + "/networks/word2vec";
 
-        if(outputDir != null)
-            this.workingDir = outputDir;
         if(EvalType.FULL.toString().toUpperCase().equals(evalType.toUpperCase()))
             train();
         else {
-            File mainEmb = new File(workingDir + "/networks/word2Vec");
+            File mainEmb = new File(workingDir + "/word2Vec");
             if (mainEmb.exists()) {
                 System.out.println("Tokens file was found. Reading values from it");
                 mainVec = WordVectorSerializer.readWord2VecModel(mainEmb);
@@ -74,13 +73,13 @@ public class Embedding {
 
         mainVec.fit();
         try {
-            WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/networks/word2Vec");
-            gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/networks/tokensWeight");
+            WordVectorSerializer.writeWord2VecModel(mainVec, workingDir + "/word2Vec");
+            gsonSerialization(mainVec.getLookupTable().getWeights(), workingDir + "/tokensWeight");
             ArrayList<double[]> weights = new ArrayList<>();
             for (int j = 0; j < mainVec.getVocab().numWords(); j++)
                 weights.add(mainVec.getWordVector(mainVec.getVocab().wordAtIndex(j)));
 
-            gsonSerialization(weights, workingDir + "/networks/pretrainedWeights");
+            gsonSerialization(weights, workingDir + "/pretrainedWeights");
         } catch (Exception ex) {
             System.out.println(ex.toString());
         }
@@ -97,7 +96,7 @@ public class Embedding {
             for (String token : tokenList.getAllTokensList())
                 tokenIndexes.add(mainVec.indexOf(token));
             allIndexes.add(tokenIndexes);
-            System.out.print(String.format("\rEmbedding creation: %s/%s", codeTokens.indexOf(tokenList), codeTokens.size()));
+            System.out.print(String.format("\rEmbedding creation: %s/%s", codeTokens.indexOf(tokenList) + 1, codeTokens.size()));
         }
         System.out.println();
         gsonSerialization(allIndexes, savePath);

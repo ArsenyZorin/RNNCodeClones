@@ -54,7 +54,9 @@ public class Arguments {
         }
 
         if(outputDir.equals(System.getProperty("user.home") + "/.rnncodeclones")){
-            File dirs = new File(outputDir + "/networks");
+            File dirs = new File(outputDir + "/networks/word2vec");
+            dirs.mkdirs();
+            dirs = new File(outputDir + "/vectors");
             dirs.mkdirs();
         }
     }

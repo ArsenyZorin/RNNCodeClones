@@ -20,6 +20,7 @@ public class ASTEntry {
     public List<ASTEntry> children;
     public final boolean isTerminal;
     public String text;
+    public String filePath;
 
     public ASTEntry(ASTEntry entry) {
         this.nodeName = entry.nodeName;
@@ -30,6 +31,7 @@ public class ASTEntry {
         this.children = entry.children;
         this.isTerminal = entry.isTerminal;
         this.text = entry.text;
+        this.filePath = entry.filePath;
     }
 
     public ASTEntry(String nodeName, short nodeIndex, int sourceStart, int sourceEnd,
@@ -73,6 +75,14 @@ public class ASTEntry {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public ASTEntry removeSpaces(List<String> blackList){

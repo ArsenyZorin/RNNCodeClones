@@ -62,23 +62,12 @@ def random_sequences(length_from, length_to,
             for _ in range(batch_size)
         ]
 
-
-def save_model(directory, name, sess):
-    if os.path.exists(directory):
-        os.rmdir(directory)
-
-    builder = tf.saved_model.builder.SavedModelBuilder(directory)
-    builder.add_meta_graph_and_variables(sess, [name])
-    builder.save()
-    print('Exporting train model to {}'.format(directory))
-
-
 def load_model(saver, sess, directory):
     if os.path.exists(directory + '.meta'):
         try:
             saver.restore(sess, directory)
-        except Exception:
-            print('Serialization load error')
+        except Exception as e:
+            print('Serialization load error:\n' + str(e))
             return False, None
         return True, sess
     return False, None

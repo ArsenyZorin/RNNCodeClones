@@ -68,19 +68,20 @@ public class PsiGen {
 
     }
 
-    private ASTEntry convertSubtree(ASTNode node, ASTEntry parent, Document doc) {
+    private ASTEntry convertSubtree(ASTNode node, ASTEntry parent, Document doc, String fileName) {
         ASTEntry rootEntry = new ASTEntry(node, parent, doc);
+        rootEntry.setFilePath(fileName);
         for (ASTNode child : node.getChildren(null)) {
-            ASTEntry entry = convertSubtree(child, rootEntry, doc);
+            ASTEntry entry = convertSubtree(child, rootEntry, doc, fileName);
             rootEntry.children.add(entry);
         }
         return rootEntry;
     }
 
-    private ASTEntry convert(PsiFile file) {
+    private ASTEntry convert(PsiFile file, String fileName) {
         Document doc = file.getViewProvider().getDocument();
         FileASTNode startNode = file.getNode();
-        return convertSubtree(startNode, null, doc);
+        return convertSubtree(startNode, null, doc, fileName);
     }
 
     private List<String> elemArrayToString(IElementType[] et) {
@@ -145,7 +146,9 @@ public class PsiGen {
 
     public ASTEntry parseFile(String filename) {
         try {
-            return convert(parse(String.join("\n", FileUtils.readFileToString(new File(filename), "UTF-8")))); //Files.readAllLines(Paths.get(filename)))));
+            return convert(parse(
+                    String.join("\n", FileUtils.readFileToString(new File(filename), "UTF-8"))
+            ), filename); //Files.readAllLines(Paths.get(filename)))));
         } catch (IOException e) {
             System.out.println();
             e.printStackTrace();
