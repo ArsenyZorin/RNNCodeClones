@@ -362,7 +362,7 @@ class SiameseNetwork:
         dist = self.sess.run([self.distance], feed_dict)
         if answ is not None:
             print('Expected: {}\t Got {}:'.format(answ, dist))
-            if int(answ) == int(dist):
+            if int(answ) == int(dist[0]):
                 eval_res.append(1)
         else:
             if 1 == int(round(dist[0])):
