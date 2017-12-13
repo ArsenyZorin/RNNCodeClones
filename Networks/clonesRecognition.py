@@ -124,7 +124,7 @@ try:
     length_to = 100
 
     batch_size = 1000
-    max_batches = 20000
+    max_batches = 5000
     batches_in_epoch = 1000
 
     input_embedding_size = weights.shape[1]
