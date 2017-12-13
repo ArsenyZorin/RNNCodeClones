@@ -3,6 +3,7 @@ import tensorflow as tf
 import shutil
 import json
 import os
+import sys
 import time
 import logging
 from model import Seq2seq, SiameseNetwork
@@ -87,12 +88,13 @@ try:
         eval_nonclone_file = open(FLAGS.data + '/vectors/EvalNonClone', 'r')
         eval_nonclone = np.array(json.loads(eval_nonclone_file.read()))
 
-        origin_encoder_states = seq2seq_model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
-        mutated_encoder_states = seq2seq_model.get_encoder_status(np.append(mutated_seq, nonclone_seq))
+        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
+        origin_encoder_states = seq2seq_eval.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
+        mutated_encoder_states = seq2seq_eval.get_encoder_status(np.append(mutated_seq, nonclone_seq))
         answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-        eval_orig_encoder_states = seq2seq_model.get_encoder_status(np.append(eval_seq, eval_seq[:eval_nonclone.shape[0]]))
-        eval_clone_encoder_states = seq2seq_model.get_encoder_status(np.append(eval_mutated, eval_nonclone))
+        eval_orig_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_seq, eval_seq[:eval_nonclone.shape[0]]))
+        eval_clone_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_mutated, eval_nonclone))
         eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0]))
 
         # LSTM RNN model
@@ -106,7 +108,8 @@ try:
             seq2seqtrain()
         origin_seq_file = open(FLAGS.data + '/vectors/indiciesOriginCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
-        encoder_states = seq2seq_model.get_encoder_status(orig_seq)
+        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
+        encoder_states = seq2seq_eval.get_encoder_status(orig_seq)
         if lstm_model.restore(directory_lstm) is None:
             siamtrain()
         lstm_model.eval(encoder_states)
@@ -133,7 +136,7 @@ try:
     encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
     decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
-    seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights)
+    seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/gpu:0')
     lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers)
 
     if 'train' == FLAGS.type:
@@ -148,3 +151,4 @@ try:
 except KeyboardInterrupt:
     print('Keyboard interruption')
     show_time()
+    sys.exit(0)
