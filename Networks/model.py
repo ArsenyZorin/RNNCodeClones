@@ -156,11 +156,9 @@ class Seq2seq:
         if end >= len(sequence):
             end = len(sequence) - 1
         for num in range(begin, end + 1):
-            fd = self.make_train_inputs(np.transpose(sequence[num]), np.transpose(sequence[num]))
-#            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
-            #encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            _, l = self.sess.run([self.train_op, self.loss], fd)
-            print('\rloss: ' + str(l), end='')
+            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
+            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
+            _, l = self.sess.run([self.train_op, self.loss], feed_dict)
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
     def decode(self, sequence):
