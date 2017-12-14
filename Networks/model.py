@@ -193,8 +193,6 @@ class SiameseNetwork:
             self.loss_accuracy_init()
             self.sess.run(tf.global_variables_initializer())
 
-        # all_vars = tf.all_variables()
-        # self.siam_vars = [v for v in all_vars if v.name.startswith(self.scope)]
         self.siam_vars = tf.global_variables(self.scope)
 
     def init_out(self):
@@ -273,7 +271,6 @@ class SiameseNetwork:
 
         print(data_size)
         for nn in range(data_size):
-            # x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
             x1_batch, x2_batch = batches[nn][0], batches[nn][1]
             y_batch = batches[nn][2]
 
