@@ -21,6 +21,10 @@ public class Repository {
         cloneRepo();
     }
 
+    public Repository(String path){
+        this.path = path;
+    }
+
     private void cloneRepo(){
         File dir = new File(path);
         try {

@@ -4,6 +4,7 @@ import arguments.EvalType;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import org.apache.commons.io.FileUtils;
+import org.bytedeco.javacpp.presets.opencv_core;
 import preproc.Embedding;
 import gitrepos.Repository;
 import preproc.TreeMutator;
@@ -23,6 +24,7 @@ public class Main {
             "DOC_", "COMMENT", "PACKAGE", "IMPORT",
             "SPACE", "IMPLEMENTS", "EXTENDS", "THROWS",
             "PARAMETER_LIST");
+    private static String savePath;
 
     public static void main(String[] argv) {
         Arguments args = new Arguments();
@@ -41,6 +43,7 @@ public class Main {
             return;
         }
 
+        savePath = args.getOutputDir() + "/vectors";
         List<String> whiteList = getAllAvailableTokens();
         List<String> blackList = whiteList.stream()
                 .filter(p -> contains(spaces, p)).collect(Collectors.toList());
@@ -53,14 +56,14 @@ public class Main {
             System.out.println("Directory for mutation: " + args.getInputDir());
             String repoPath = args.getInputDir();
             mutate(treeMutator, emb,
-                    evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode"),
-                    args.getOutputDir() + "/EvalMutatedCode");
-            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
+                    evaluate(treeMutator, emb, repoPath, savePath + "/EvalCode"),
+                    savePath + "/EvalMutatedCode");
+            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", savePath + "/EvalNonClone");
 
         } else if (EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
             String repoPath = args.getInputDir();
             System.out.println("Start analyzing repo : " + repoPath);
-            evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/indiciesOriginCode");
+            evaluate(treeMutator, emb, repoPath, savePath + "/indiciesOriginCode");
         } else if (EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
             train(treeMutator, emb, args);
         } else {
@@ -68,9 +71,9 @@ public class Main {
             String repoPath = args.getInputDir();
             train(treeMutator, emb, args);
 
-            List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, args.getOutputDir() + "/EvalCode");
+            List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, savePath + "/EvalCode");
             mutate(treeMutator, emb, tree, args.getOutputDir() + "/EvalMutatedCode");
-            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", args.getOutputDir() + "/EvalNonClone");
+            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", savePath + "/EvalNonClone");
         }
 
         String path = Main.class.getResource("/clonesRecognition.py").getPath();
@@ -96,10 +99,11 @@ public class Main {
         File dir = emb.getIdeaRepo();
         Repository repository = null;
         if(dir == null)
-            repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
-        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", args.getOutputDir() + "/indiciesOriginCode");
-        mutate(treeMutator, emb, originTree, args.getOutputDir() + "/indiciesMutatedCode");
-        if(repository != null)
+            //repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
+            repository = new Repository("/tmp/intellij-community");
+        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", savePath + "/indiciesOriginCode");
+        mutate(treeMutator, emb, originTree, savePath + "/indiciesMutatedCode");
+        /*if(repository != null)
             repository.removeRepo();
         else
             try {
@@ -107,10 +111,11 @@ public class Main {
             } catch (IOException ex){
                 ex.printStackTrace();
             }
-
-        repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
-        evaluate(treeMutator, emb, "/tmp/netbeans", args.getOutputDir() + "/indiciesNonClone");
-        repository.removeRepo();
+*/
+        //repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
+        //repository = new Repository("/tmp/netbeans");
+        evaluate(treeMutator, emb, "/tmp/netbeans", savePath + "/indiciesNonClone");
+        //repository.removeRepo();
 
 
     }
