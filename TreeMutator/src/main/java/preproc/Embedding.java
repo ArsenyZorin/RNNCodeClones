@@ -44,8 +44,9 @@ public class Embedding {
     }
 
     public void train() {
-        Repository repository = new Repository("/tmp/intellij-community",
-                "https://github.com/JetBrains/intellij-community.git");
+        //Repository repository = new Repository("/tmp/intellij-community",
+        //        "https://github.com/JetBrains/intellij-community.git");
+        Repository repository = new Repository("/tmp/intellij-community");
         ideaRepo = repository.getRepoFile();
         System.out.println("Additional analysis : " + ideaRepo.getAbsolutePath());
         List<ASTEntry> tree = treeMutator.analyzeDir(ideaRepo.getAbsolutePath());
