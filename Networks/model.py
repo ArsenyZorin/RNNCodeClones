@@ -5,18 +5,19 @@ import sys
 import itertools
 import threading
 import math
-from CloneClass import CloneClass
+from cloneClass import CloneClass
 from random import random
 
 
 class Seq2seq:
 
-    def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
+    def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, device):
         self.scope = 'seq2seq_'
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
-        with tf.variable_scope(self.scope):
+        self.device = device
+        with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
             self.vocab_size = vocab_size
@@ -24,13 +25,12 @@ class Seq2seq:
             self.weights = weights
             self.create_model()
 
-        #self.seq2seq_vars = tf.global_variables(self.scope)
-        all_vars = tf.all_variables()
-        self.seq2seq_vars = [v for v in all_vars if v.name.startswith(self.scope)]
+        self.seq2seq_vars = tf.global_variables(self.scope)
 
     def create_model(self):
         self.create_placeholders()
         self.create_embeddings()
+
         self.init_encoder()
         self.init_decoder()
         self.init_optimizer()
@@ -47,13 +47,15 @@ class Seq2seq:
     def create_embeddings(self):
         self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
                                         dtype=tf.float32, name='embeddings')
+
         self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
         self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
 
     def init_encoder(self):
-        self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
-            self.encoder_cell, self.encoder_inputs_embedded,
-            dtype=tf.float32, time_major=True,)
+        with tf.device(self.device):
+            self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
+                self.encoder_cell, self.encoder_inputs_embedded,
+                dtype=tf.float32, time_major=True,)
 
     def init_decoder(self):
         self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
@@ -95,19 +97,18 @@ class Seq2seq:
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
                                            batch_size=batch_size)
 
-        self.restore(directory + '/seq2seq.ckpt')
         loss_track = []
         for batch in range(max_batches + 1):
             seq_batch = next(batches)
             fd = self.make_train_inputs(seq_batch, seq_batch)
             _, l = self.sess.run([self.train_op, self.loss], fd)
             loss_track.append(l)
-            current_loss = self.sess.run(self.loss, fd)
-            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end='')
+#            current_loss = self.sess.run(self.loss, fd)
+            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(l), end='')
 
             if batch == 0 or batch % batches_in_epoch == 0:
                 print('\nbatch {}'.format(batch))
-                print('  minibatch loss: {}'.format(current_loss))
+                print('  minibatch loss: {}'.format(l))
                 predict_ = self.sess.run(self.decoder_prediction, fd)
                 for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
                     print('  sample {}:'.format(i + 1))
@@ -130,10 +131,12 @@ class Seq2seq:
             self.sess = sess
             print('model restored from {}'.format(directory))
             return self.sess
+        else:
+            return None
 
     def get_encoder_status(self, sequence):
         encoder_fs = []
-        threads_num = 20
+        threads_num = 10
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
@@ -142,7 +145,6 @@ class Seq2seq:
             args=(i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
                 for i in range(threads_num)
         ]
-
         for t in threads:
             t.start()
 
@@ -156,7 +158,7 @@ class Seq2seq:
         if end >= len(sequence):
             end = len(sequence) - 1
         for num in range(begin, end + 1):
-            feed_dict = {self.encoder_inputs: [sequence[num]]}
+            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
@@ -191,9 +193,9 @@ class SiameseNetwork:
             self.loss_accuracy_init()
             self.sess.run(tf.global_variables_initializer())
 
-        all_vars = tf.all_variables()
-        self.siam_vars = [v for v in all_vars if v.name.startswith(self.scope)]
-        # self.siam_vars = tf.global_variables(self.scope)
+        # all_vars = tf.all_variables()
+        # self.siam_vars = [v for v in all_vars if v.name.startswith(self.scope)]
+        self.siam_vars = tf.global_variables(self.scope)
 
     def init_out(self):
         self.out1 = self.rnn(self.input_x1, 'method1')
@@ -269,11 +271,10 @@ class SiameseNetwork:
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
 
-        self.restore(directory + '/siam.ckpt')
-
         print(data_size)
         for nn in range(data_size):
-            x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
+            # x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
+            x1_batch, x2_batch = batches[nn][0], batches[nn][1]
             y_batch = batches[nn][2]
 
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
@@ -341,7 +342,6 @@ class SiameseNetwork:
                 end = begin + elems_thr
                 if end >= len(batches):
                     end = len(batches) - 1
-                print('[{}:{}]'.format(begin, end + 1))
                 combs = itertools.combinations(batches[begin:end + 1], 2)
                 for x, y in combs:
                     # clone = CloneClass(x)
@@ -362,7 +362,7 @@ class SiameseNetwork:
         dist = self.sess.run([self.distance], feed_dict)
         if answ is not None:
             print('Expected: {}\t Got {}:'.format(answ, dist))
-            if int(answ) == int(dist):
+            if int(answ) == int(dist[0]):
                 eval_res.append(1)
         else:
             if 1 == int(round(dist[0])):
@@ -378,3 +378,4 @@ class SiameseNetwork:
             self.sess = sess
             print('model restored from {}'.format(directory))
             return self.sess
+        return None

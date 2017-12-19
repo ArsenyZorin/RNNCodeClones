@@ -65,11 +65,11 @@ public class Main {
             System.out.println("Start analyzing repo : " + repoPath);
             evaluate(treeMutator, emb, repoPath, savePath + "/indiciesOriginCode");
         } else if (EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
-            train(treeMutator, emb, args);
+            train(treeMutator, emb, saveFile);
         } else {
             System.out.println("Directory for analysis: " + args.getInputDir());
             String repoPath = args.getInputDir();
-            train(treeMutator, emb, args);
+            train(treeMutator, emb, saveFile);
 
             List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, savePath + "/EvalCode");
             mutate(treeMutator, emb, tree, args.getOutputDir() + "/EvalMutatedCode");
@@ -80,7 +80,7 @@ public class Main {
         System.out.println(path);
 
         String pythonArgs = "--type full --data " + args.getOutputDir();
-        pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
+//        pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
     }
 
     public Main getMain() {
@@ -95,7 +95,7 @@ public class Main {
         return false;
     }
 
-    private static void train(TreeMutator treeMutator, Embedding emb, Arguments args){
+    private static void train(TreeMutator treeMutator, Embedding emb, String savePath){
         File dir = emb.getIdeaRepo();
         Repository repository = null;
         if(dir == null)
