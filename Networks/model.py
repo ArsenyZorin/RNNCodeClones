@@ -134,9 +134,8 @@ class Seq2seq:
         else:
             return None
 
-    def get_encoder_status(self, sequence):
+    def get_encoder_status(self, sequence, threads_num):
         encoder_fs = []
-        threads_num = 10
         coord = tf.train.Coordinator()
 
         elems_in_tread = int(len(sequence) / threads_num)
@@ -289,7 +288,7 @@ class SiameseNetwork:
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
-    def eval(self, input_x1, input_x2=None, answ=None):
+    def eval(self, input_x1, input_x2=None, answ=None, threads_num=1):
         if input_x2 is not None and answ is not None:
             eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
             data_size = eval_batches.shape[0]
@@ -310,7 +309,6 @@ class SiameseNetwork:
             eval_res = []
             clones_list = []
 
-            threads_num = 20
             self.iteration = 1
             self.length = int(math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2)))
 
@@ -327,9 +325,10 @@ class SiameseNetwork:
                 t.start()
 
             coord.join(threads)
-            percentage = len(eval_res) / data_size
+            percentage = len(eval_res) / self.length
+            print()
             print('Clones percentage: {}'.format(percentage))
-            print('Clones list size: {}'.format(len(clones_list)))
+            # print('Clones list size: {}'.format(len(clones_list)))
             return clones_list
         else:
             print('Invalid evaluation')
