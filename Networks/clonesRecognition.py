@@ -103,7 +103,7 @@ try:
     def eval():
         if seq2seq_model.restore(directory_seq2seq + '/seq2seq.ckpt') is None:
             seq2seqtrain()
-        origin_seq_file = open(FLAGS.data + '/vectors/indiciesOriginCode', 'r')
+        origin_seq_file = open(FLAGS.data + '/vectors/originCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
         seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
         encoder_states = seq2seq_eval.get_encoder_status(orig_seq, threads_num=FLAGS.cpus)

@@ -62,6 +62,7 @@ def random_sequences(length_from, length_to,
             for _ in range(batch_size)
         ]
 
+
 def load_model(saver, sess, directory):
     if os.path.exists(directory + '.meta'):
         try:
