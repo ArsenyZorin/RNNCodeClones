@@ -61,7 +61,7 @@ public class Main {
         } else if (EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
             String repoPath = args.getInputDir();
             System.out.println("Start analyzing repo : " + repoPath);
-            evaluate(treeMutator, emb, repoPath, saveFile + "/indiciesOriginCode");
+            evaluate(treeMutator, emb, repoPath, saveFile + "/originCode");
         } else if (EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
             train(treeMutator, emb, saveFile);
         } else {
