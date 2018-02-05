@@ -101,14 +101,13 @@ class Seq2seq:
         for batch in range(max_batches + 1):
             seq_batch = next(batches)
             fd = self.make_train_inputs(seq_batch, seq_batch)
-            _, l = self.sess.run([self.train_op, self.loss], fd)
-            loss_track.append(l)
-#            current_loss = self.sess.run(self.loss, fd)
-            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(l), end='')
+            _, loss = self.sess.run([self.train_op, self.loss], fd)
+            loss_track.append(loss)
+            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(loss), end='')
 
             if batch == 0 or batch % batches_in_epoch == 0:
                 print('\nbatch {}'.format(batch))
-                print('  minibatch loss: {}'.format(l))
+                print('  minibatch loss: {}'.format(loss))
                 predict_ = self.sess.run(self.decoder_prediction, fd)
                 for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
                     print('  sample {}:'.format(i + 1))
@@ -200,10 +199,10 @@ class SiameseNetwork:
             self.out1 = self.rnn(self.input_x1, 'method1')
             self.out2 = self.rnn(self.input_x2, 'method2')
             self.distance = tf.sqrt(tf.reduce_sum(
-                tf.square(tf.subtract(self.out1, self.out2))))
+                            tf.square(tf.subtract(self.out1, self.out2))))
             self.distance = tf.div(self.distance,
-                               tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
-                                      tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
+                            tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
+                                    tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
 
     def loss_accuracy_init(self):
         self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
@@ -282,7 +281,7 @@ class SiameseNetwork:
             print('\rStep ' + str(nn) + '/' + str(data_size), end='')
             if nn == 0 or nn % 1000 == 0:
                 print('\nTRAIN: step {}, loss {:g}'.format(nn, loss))
-                print(y_batch, dist, temp_sim)
+                print('Expected: {}, got: {}'.format(y_batch, dist))
 
         saver = tf.train.Saver(self.siam_vars)
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
