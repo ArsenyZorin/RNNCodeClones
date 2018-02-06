@@ -1,8 +1,8 @@
 import numpy as np
+import os
 import tensorflow as tf
 import shutil
 import json
-import os
 import sys
 import time
 from model import Seq2seq, SiameseNetwork
@@ -136,7 +136,7 @@ try:
     decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
     seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
-    lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/cpu:0')
+    lstm_model = SiameseNetwork(encoder_hidden_units, encoder_hidden_units, batch_size, layers, 10, '/cpu:0')
 
     if 'train' == FLAGS.type:
         train()
