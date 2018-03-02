@@ -12,7 +12,6 @@ tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Director
 tf.flags.DEFINE_integer('cpus', 1, 'Amount of threads for evaluation')
 
 FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
 
 start = time.time()
 
