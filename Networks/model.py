@@ -67,7 +67,7 @@ class Seq2seq:
         self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
 
     def init_optimizer(self):
-        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(
                 labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
                 logits=self.decoder_logits, name='stepwise')
 
@@ -173,131 +173,70 @@ class Seq2seq:
 
 
 class SiameseNetwork:
-    def __init__(self, sequence_length, embedding_size, batch_size, layers, hidden_units,  device):
-        self.scope = 'siamese'
+    def __init__(self, sequence_length, batch_size, layers, device):
+        self.scope = 'siamese_'
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
         self.device = device
-        self.layers = layers
-        self.batch_size = batch_size
-        self.hidden_units = hidden_units
-        self.sequence_length = sequence_length
-        self.embedding_size = embedding_size
         with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
             self.input_x1 = tf.placeholder(tf.float32, shape=[None, sequence_length], name='originInd')
             self.input_x2 = tf.placeholder(tf.float32, shape=[None, sequence_length], name='cloneInd')
             self.input_y = tf.placeholder(tf.float32, shape=[None], name='answers')
-            self.dropout_keep_prob = tf.placeholder(tf.float32, name='dropout')
+
+            self.sequence_length = sequence_length
+            self.batch_size = batch_size
+            self.layers = layers
 
             self.init_out()
             self.loss_accuracy_init()
+            self.sess.run(tf.global_variables_initializer())
 
         self.siam_vars = tf.global_variables(self.scope)
 
-    def rnn(self, x, dropout, scope, embedding_size, sequence_length, hidden_units):
-        n_hidden = hidden_units
-        n_layers = self.layers
-
-        with tf.name_scope('fw' + scope), tf.variable_scope('fw' + scope):
-            stacked_rnn_fw = []
-            for _ in range(n_layers):
-                fw_cell = tf.nn.rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0, state_is_tuple=True)
-                lstm_fw_cell = tf.contrib.rnn.DropoutWrapper(fw_cell,output_keep_prob=dropout)
-                stacked_rnn_fw.append(lstm_fw_cell)
-            lstm_fw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_fw, state_is_tuple=True)
-
-            outputs, _ = tf.nn.static_rnn(lstm_fw_cell_m, [x], dtype=tf.float32)
-        return outputs[-1]
-
-    def contrastive_loss(self, y,d,batch_size):
-        tmp= y *tf.square(d)
-        #tmp= tf.mul(y,tf.square(d))
-        tmp2 = (1-y) *tf.square(tf.maximum((1 - d),0))
-        return tf.reduce_sum(tmp +tmp2)/batch_size/2
-
     def init_out(self):
         with tf.device(self.device):
-            self.out1=self.rnn(self.input_x1, self.dropout_keep_prob, "side1", self.embedding_size, self.sequence_length, self.hidden_units)
-            self.out2=self.rnn(self.input_x2, self.dropout_keep_prob, "side2", self.embedding_size, self.sequence_length, self.hidden_units)
-            self.distance = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(self.out1,self.out2)),1,keep_dims=True))
-            self.distance = tf.div(self.distance, tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1),1,keep_dims=True)),tf.sqrt(tf.reduce_sum(tf.square(self.out2),1,keep_dims=True))))
-            self.distance = tf.reshape(self.distance, [-1], name="distance")
+            self.out1 = self.rnn(self.input_x1, 'method1')
+            self.out2 = self.rnn(self.input_x2, 'method2')
+            self.distance = tf.sqrt(tf.reduce_sum(
+                            tf.square(tf.subtract(self.out1, self.out2))))
+            self.distance = tf.div(self.distance,
+                            tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
+                                    tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
 
     def loss_accuracy_init(self):
-        with tf.name_scope("loss"):
-            self.loss = self.contrastive_loss(self.input_y,self.distance, self.batch_size)
-        #### Accuracy computation is outside of this class.
-        with tf.name_scope("accuracy"):
-            self.temp_sim = tf.subtract(tf.ones_like(self.distance),tf.rint(self.distance), name="temp_sim") #auto threshold 0.5
-            correct_predictions = tf.equal(self.temp_sim, self.input_y)
-            self.accuracy=tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+        self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
+                                    self.distance, name='temp_sim')
+        self.correct_predictions = tf.equal(self.temp_sim, self.input_y)
+        self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, 'float'), name='accuracy')
 
+        self.loss = self.get_loss()
+        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
-#    def __init__(self, sequence_length, batch_size, layers, device):
-#        self.scope = 'siamese_'
-#        config = tf.ConfigProto()
-#        config.gpu_options.allow_growth = True
-#        self.sess = tf.Session(config=config)
-#        self.device = device
-#        with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
-#            self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
-#            self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
-#            self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
-#
-#            self.sequence_length = sequence_length
-#            self.batch_size = batch_size
-#            self.layers = layers
-#
-#            self.init_out()
-#            self.loss_accuracy_init()
-#            self.sess.run(tf.global_variables_initializer())
-#
-#        self.siam_vars = tf.global_variables(self.scope)
-#
-#    def init_out(self):
-#        with tf.device(self.device):
-#            self.out1 = self.rnn(self.input_x1, 'method1')
-#            self.out2 = self.rnn(self.input_x2, 'method2')
-#            self.distance = tf.sqrt(tf.reduce_sum(
-#                            tf.square(tf.subtract(self.out1, self.out2))))
-#            self.distance = tf.div(self.distance,
-#                            tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
-#                                    tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
-#
-#    def loss_accuracy_init(self):
-#        self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
-#                                    self.distance, name='temp_sim')
-#        self.correct_predictions = tf.equal(self.temp_sim, self.input_y)
-#        self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, 'float'), name='accuracy')
-#
-#        self.loss = self.get_loss()
-#        self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
-#
-#    def get_loss(self):
-#        tmp1 = (1 - self.input_y) * tf.square(self.distance)
-#        tmp2 = self.input_y * tf.square(tf.maximum(0.0, 1 - self.distance))
-#        return tf.add(tmp1, tmp2) / 2
-#
-#    def rnn(self, input_x, name):
-#        with tf.name_scope('fw' + name), tf.variable_scope('fw' + name):
-#            stacked_rnn_fw = []
-#            for _ in range(self.layers):
-#                fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.layers, forget_bias=1.0, state_is_tuple=True)
-#                stacked_rnn_fw.append(fw_cell)
-#            lstm_fw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_fw, state_is_tuple=True)
-#
-#        with tf.name_scope('bw' + name), tf.variable_scope('bw' + name):
-#            stacked_rnn_bw = []
-#            for _ in range(self.layers):
-#                bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.layers, forget_bias=1.0, state_is_tuple=True)
-#                stacked_rnn_bw.append(bw_cell)
-#            lstm_bw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_bw, state_is_tuple=True)
-#
-#        with tf.name_scope('bw' + name), tf.variable_scope('bw' + name):
-#            outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell_m, lstm_bw_cell_m, [input_x], dtype=tf.float32)
-#        return outputs
-#
+    def get_loss(self):
+        tmp1 = (1 - self.input_y) * tf.square(self.distance)
+        tmp2 = self.input_y * tf.square(tf.maximum(0.0, 1 - self.distance))
+        return tf.add(tmp1, tmp2) / 2
+
+    def rnn(self, input_x, name):
+        with tf.name_scope('fw' + name), tf.variable_scope('fw' + name):
+            stacked_rnn_fw = []
+            for _ in range(self.layers):
+                fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.layers, forget_bias=1.0, state_is_tuple=True)
+                stacked_rnn_fw.append(fw_cell)
+            lstm_fw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_fw, state_is_tuple=True)
+
+        with tf.name_scope('bw' + name), tf.variable_scope('bw' + name):
+            stacked_rnn_bw = []
+            for _ in range(self.layers):
+                bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self.layers, forget_bias=1.0, state_is_tuple=True)
+                stacked_rnn_bw.append(bw_cell)
+            lstm_bw_cell_m = tf.nn.rnn_cell.MultiRNNCell(cells=stacked_rnn_bw, state_is_tuple=True)
+
+        with tf.name_scope('bw' + name), tf.variable_scope('bw' + name):
+            outputs, _, _ = tf.nn.static_bidirectional_rnn(lstm_fw_cell_m, lstm_bw_cell_m, [input_x], dtype=tf.float32)
+        return outputs
+
     def dict_feed(self, x1_batch, x2_batch, y_batch=None):
         if random() > 0.5:
 
@@ -335,13 +274,13 @@ class SiameseNetwork:
             x1_batch, x2_batch = batches[nn][0], batches[nn][1]
             y_batch = batches[nn][2]
 
-            feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
+            feed_dict = self.dict_feed(x1_batch, x2_batch, [y_batch])
             _, loss, dist, temp_sim = \
-                self.sess.run([self.loss, self.distance, self.temp_sim], feed_dict)
+                self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
 
             print('\rStep ' + str(nn) + '/' + str(data_size), end='')
             if nn == 0 or nn % 1000 == 0:
-                print('\nTRAIN: step {}, loss {:g}'.format(nn, loss))
+                print('\nTRAIN: step {}, loss {:g}'.format(nn, loss[0]))
                 print('Expected: {}, got: {}'.format(y_batch, dist))
 
         saver = tf.train.Saver(self.siam_vars)

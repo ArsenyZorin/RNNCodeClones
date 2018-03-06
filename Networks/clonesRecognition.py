@@ -86,16 +86,18 @@ try:
                                                                  threads_num=FLAGS.cpus)
         answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-        eval_orig_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_seq,
-                                                                             eval_seq[:eval_nonclone.shape[0]]),
-                                                                   threads_num=FLAGS.cpus)
-        eval_clone_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_mutated, eval_nonclone), FLAGS.cpus)
         eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0]))
 
         # LSTM RNN model
         # _________________
 
         lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_lstm)
+
+        eval_orig_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_seq,
+                                                                             eval_seq[:eval_nonclone.shape[0]]),
+                                                                   threads_num=FLAGS.cpus)
+        eval_clone_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_mutated, eval_nonclone), FLAGS.cpus)
+
         lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/cpu:0')
         lstm_model_eval.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ, threads_num=FLAGS.cpus)
 
@@ -135,7 +137,7 @@ try:
     decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
     seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
-    lstm_model = SiameseNetwork(encoder_hidden_units, encoder_hidden_units, batch_size, layers, 10, '/cpu:0')
+    lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/cpu:0')
 
     if 'train' == FLAGS.type:
         train()
