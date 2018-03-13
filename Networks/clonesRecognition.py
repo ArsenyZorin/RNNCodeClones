@@ -134,17 +134,17 @@ try:
     encoder_hidden_units = layers
     decoder_hidden_units = encoder_hidden_units
 
-    if tf.FLAGS.gpus != '':
+    if FLAGS.gpus != '':
         enc_cells = []
         dec_cells = []
-        for i in range(tf.FLAGS.gpus):
+        for i in range(FLAGS.gpus):
             enc_cells.append(tf.contrib.rnn.DeviceWrapper(
                 tf.contrib.rnn.LSTMCell(encoder_hidden_units),
-                '/device:GPU:%d' % (encoder_hidden_units % tf.FLAGS.gpus)
+                '/device:GPU:%d' % (encoder_hidden_units % FLAGS.gpus)
             ))
             dec_cells.append(tf.contrib.rnn.DeviceWrapper(
                 tf.contrib.rnn.LSTMCell(decoder_hidden_units),
-                '/device:GPU:%d' % (decoder_hidden_units % tf.FLAGS.gpus)
+                '/device:GPU:%d' % (decoder_hidden_units % FLAGS.gpus)
             ))
 
         encoder_cell = tf.contrib.rnn.MultRnnCell(enc_cells)
