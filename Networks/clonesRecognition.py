@@ -10,6 +10,7 @@ from model import Seq2seq, SiameseNetwork
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
 tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Directory with data for analysis')
 tf.flags.DEFINE_integer('cpus', 1, 'Amount of threads for evaluation')
+tf.flags.DEFINE_integer('gpus', 1, 'Amount of GPUs for training')
 
 FLAGS = tf.flags.FLAGS
 
@@ -133,8 +134,24 @@ try:
     encoder_hidden_units = layers
     decoder_hidden_units = encoder_hidden_units
 
-    encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
-    decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
+    if tf.FLAGS.gpus != '':
+        enc_cells = []
+        dec_cells = []
+        for i in range(tf.FLAGS.gpus):
+            enc_cells.append(tf.contrib.rnn.DeviceWrapper(
+                tf.contrib.rnn.LSTMCell(encoder_hidden_units),
+                '/device:GPU:%d' % (encoder_hidden_units % tf.FLAGS.gpus)
+            ))
+            dec_cells.append(tf.contrib.rnn.DeviceWrapper(
+                tf.contrib.rnn.LSTMCell(decoder_hidden_units),
+                '/device:GPU:%d' % (decoder_hidden_units % tf.FLAGS.gpus)
+            ))
+
+        encoder_cell = tf.contrib.rnn.MultRnnCell(enc_cells)
+        decoder_cell = tf.contrib.rnn.LSTMCell(dec_cells)
+    else:
+        encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
+        decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
     seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/device:CPU:0')
     lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
