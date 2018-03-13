@@ -147,8 +147,8 @@ try:
                 '/device:GPU:%d' % (decoder_hidden_units % FLAGS.gpus)
             ))
 
-        encoder_cell = tf.contrib.rnn.MultRnnCell(enc_cells)
-        decoder_cell = tf.contrib.rnn.LSTMCell(dec_cells)
+        encoder_cell = tf.contrib.rnn.MultiRNNCell(enc_cells)
+        decoder_cell = tf.contrib.rnn.MultiRNNCell(dec_cells)
     else:
         encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
         decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
