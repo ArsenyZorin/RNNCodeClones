@@ -78,7 +78,7 @@ try:
         eval_nonclone_file = open(FLAGS.data + '/vectors/EvalNonClone', 'r')
         eval_nonclone = np.array(json.loads(eval_nonclone_file.read()))
 
-        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
+        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/device:CPU:0')
         origin_encoder_states = seq2seq_eval.get_encoder_status(np.append(orig_seq,
                                                                           orig_seq[:nonclone_seq.shape[0]]),
                                                                 threads_num=FLAGS.cpus)
@@ -98,7 +98,7 @@ try:
                                                                    threads_num=FLAGS.cpus)
         eval_clone_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_mutated, eval_nonclone), FLAGS.cpus)
 
-        lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/cpu:0')
+        lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
         lstm_model_eval.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ, threads_num=FLAGS.cpus)
 
     def eval():
@@ -106,12 +106,12 @@ try:
             seq2seqtrain()
         origin_seq_file = open(FLAGS.data + '/vectors/originCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
-        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
+        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/device:CPU:0')
         encoder_states = seq2seq_eval.get_encoder_status(orig_seq, threads_num=FLAGS.cpus)
         if lstm_model.restore(directory_lstm + '/siam.ckpt') is None:
             siamtrain()
 
-        lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/cpu:0')
+        lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
         lstm_model_eval.eval(encoder_states, threads_num=FLAGS.cpus)
 
     weights_file = open(FLAGS.data + '/networks/word2vec/pretrainedWeights', 'r')
@@ -136,8 +136,8 @@ try:
     encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
     decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
 
-    seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
-    lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/cpu:0')
+    seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/device:CPU:0')
+    lstm_model = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
 
     if 'train' == FLAGS.type:
         train()
