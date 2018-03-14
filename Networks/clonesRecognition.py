@@ -10,7 +10,7 @@ from model import Seq2seq, SiameseNetwork
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
 tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Directory with data for analysis')
 tf.flags.DEFINE_integer('cpus', 1, 'Amount of threads for evaluation')
-tf.flags.DEFINE_integer('gpus', 1, 'Amount of GPUs for training')
+tf.flags.DEFINE_integer('gpus', None, 'Amount of GPUs for training')
 
 FLAGS = tf.flags.FLAGS
 
@@ -64,22 +64,13 @@ try:
         origin_seq_file = open(FLAGS.data + '/vectors/indiciesOriginCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
 
-        eval_seq_file = open(FLAGS.data + '/vectors/EvalCode', 'r')
-        eval_seq = np.array(json.loads(eval_seq_file.read()))
-
         mutated_seq_file = open(FLAGS.data + '/vectors/indiciesMutatedCode', 'r')
         mutated_seq = np.array(json.loads(mutated_seq_file.read()))
-
-        eval_mutated_file = open(FLAGS.data + '/vectors/EvalMutatedCode', 'r')
-        eval_mutated = np.array(json.loads(eval_mutated_file.read()))
 
         nonclone_file = open(FLAGS.data + '/vectors/indiciesNonClone', 'r')
         nonclone_seq = np.array(json.loads(nonclone_file.read()))
 
-        eval_nonclone_file = open(FLAGS.data + '/vectors/EvalNonClone', 'r')
-        eval_nonclone = np.array(json.loads(eval_nonclone_file.read()))
-
-        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/device:CPU:0')
+        seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
         origin_encoder_states = seq2seq_eval.get_encoder_status(np.append(orig_seq,
                                                                           orig_seq[:nonclone_seq.shape[0]]),
                                                                 threads_num=FLAGS.cpus)
@@ -87,30 +78,41 @@ try:
                                                                  threads_num=FLAGS.cpus)
         answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-        eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0]))
-
         # LSTM RNN model
         # _________________
 
         lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_lstm)
+
+        lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
+
+        eval_seq_file = open(FLAGS.data + '/vectors/EvalCode', 'r')
+        eval_seq = np.array(json.loads(eval_seq_file.read()))
+
+        eval_mutated_file = open(FLAGS.data + '/vectors/EvalMutatedCode', 'r')
+        eval_mutated = np.array(json.loads(eval_mutated_file.read()))
+
+        eval_nonclone_file = open(FLAGS.data + '/vectors/EvalNonClone', 'r')
+        eval_nonclone = np.array(json.loads(eval_nonclone_file.read()))
+
+        eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0]))
 
         eval_orig_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_seq,
                                                                              eval_seq[:eval_nonclone.shape[0]]),
                                                                    threads_num=FLAGS.cpus)
         eval_clone_encoder_states = seq2seq_eval.get_encoder_status(np.append(eval_mutated, eval_nonclone), FLAGS.cpus)
 
-        lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
         lstm_model_eval.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ, threads_num=FLAGS.cpus)
 
     def eval():
         if seq2seq_model.restore(directory_seq2seq + '/seq2seq.ckpt') is None:
             seq2seqtrain()
+        if lstm_model.restore(directory_lstm + '/siam.ckpt') is None:
+            siamtrain()
+
         origin_seq_file = open(FLAGS.data + '/vectors/originCode', 'r')
         orig_seq = np.array(json.loads(origin_seq_file.read()))
         seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/device:CPU:0')
         encoder_states = seq2seq_eval.get_encoder_status(orig_seq, threads_num=FLAGS.cpus)
-        if lstm_model.restore(directory_lstm + '/siam.ckpt') is None:
-            siamtrain()
 
         lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
         lstm_model_eval.eval(encoder_states, threads_num=FLAGS.cpus)
@@ -134,7 +136,7 @@ try:
     encoder_hidden_units = layers
     decoder_hidden_units = encoder_hidden_units
 
-    if FLAGS.gpus != '':
+    if FLAGS.gpus is not None:
         enc_cells = []
         dec_cells = []
         for i in range(FLAGS.gpus):
