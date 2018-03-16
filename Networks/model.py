@@ -156,7 +156,7 @@ class Seq2seq:
         if end >= len(sequence):
             end = len(sequence) - 1
         for num in range(begin, end + 1):
-            feed_dict = {self.encoder_inputs: np.transpose([sequence[num]])}
+            feed_dict = {self.encoder_inputs: [sequence[num]]}
             encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
             print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
 
@@ -180,9 +180,9 @@ class SiameseNetwork:
         self.sess = tf.Session(config=config)
         self.device = device
         with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
-            self.input_x1 = tf.placeholder(tf.float32, shape=[None, sequence_length], name='originInd')
-            self.input_x2 = tf.placeholder(tf.float32, shape=[None, sequence_length], name='cloneInd')
-            self.input_y = tf.placeholder(tf.float32, shape=[None], name='answers')
+            self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
+            self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
+            self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
 
             self.sequence_length = sequence_length
             self.batch_size = batch_size
@@ -271,17 +271,19 @@ class SiameseNetwork:
 
         print(data_size)
         for nn in range(data_size):
-            x1_batch, x2_batch = batches[nn][0], batches[nn][1]
+            x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
             y_batch = batches[nn][2]
+           # x1_batch, x2_batch = batches[nn][0], batches[nn][1]
+           # y_batch = batches[nn][2]
 
-            feed_dict = self.dict_feed(x1_batch, x2_batch, [y_batch])
+            feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
 
             print('\rStep ' + str(nn) + '/' + str(data_size), end='')
-            if nn == 0 or nn % 1000 == 0:
-                print('\nTRAIN: step {}, loss {:g}'.format(nn, loss[0]))
-                print('Expected: {}, got: {}'.format(y_batch, dist))
+            # if nn == 0 or nn % 100 == 0:
+            print('\nTRAIN: step {}, loss {:g}'.format(nn, loss))
+            print('Expected: {}, got: {}'.format(y_batch, dist))
 
         saver = tf.train.Saver(self.siam_vars)
         save_path = saver.save(self.sess, directory + '/siam.ckpt')

@@ -5,6 +5,8 @@ import shutil
 import json
 import sys
 import time
+import h5py
+import pickle
 from model import Seq2seq, SiameseNetwork
 
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
@@ -71,17 +73,47 @@ try:
         nonclone_seq = np.array(json.loads(nonclone_file.read()))
 
         seq2seq_eval = Seq2seq(encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, '/cpu:0')
-        origin_encoder_states = seq2seq_eval.get_encoder_status(np.append(orig_seq,
-                                                                          orig_seq[:nonclone_seq.shape[0]]),
-                                                                threads_num=FLAGS.cpus)
-        mutated_encoder_states = seq2seq_eval.get_encoder_status(np.append(mutated_seq, nonclone_seq),
-                                                                 threads_num=FLAGS.cpus)
+
+       # orig_encst = []
+       # mut_encst = []
+
+        orig_encst = seq2seq_eval.get_encoder_status(np.append(orig_seq,
+                                                     orig_seq[:nonclone_seq.shape[0]]),
+                                                     threads_num=FLAGS.cpus)
+        mut_encst = seq2seq_eval.get_encoder_status(np.append(mutated_seq, nonclone_seq),
+                                                    threads_num=FLAGS.cpus)
+        # if not os.path.exists(FLAGS.data + '/vectors/orig_enc'):
+        #     orig_encst = seq2seq_eval.get_encoder_status(np.append(orig_seq,
+        #                                                         orig_seq[:nonclone_seq.shape[0]]),
+        #                                                         threads_num=FLAGS.cpus)
+        #     # with h5py.File(FLAGS.data + '/vectors/orig_enc', 'w') as hf:
+        #     #     file_group = hf.create_group('origin_encoder_states')
+        #     #     [file_group.create_dataset(orig_encst.index(elem), data=elem) for elem in orig_encst]
+        #     with open(FLAGS.data + '/vectors/orig_enc', 'w') as f:
+        #         pickle.dumps(orig_encst, f)
+
+        # else:
+        #     with h5py.File(FLAGS.data + '/vectors/orig_enc', 'r') as hf:
+        #         orig_encst = hf['origin_encoder_states'][:]
+
+        # if not os.path.exists(FLAGS.data + '/vectors/mut_enc'):
+        #     mut_encst = seq2seq_eval.get_encoder_status(np.append(mutated_seq, nonclone_seq),
+        #                                                          threads_num=FLAGS.cpus)
+
+        #     # with h5py.File(FLAGS.data + '/vectors/mut_ecn', 'w') as hf:
+        #     #     hf.create_dataset('mutated_encoder_states', data=mut_encst)
+        #     with open(FLAGS.data + '/vectors/mut_ecn', 'w') as f:
+        #         pickle.dump(mut_encst, f)
+        # else:
+        #     with h5py.File(FLAGS.data + '/vectors/mut_ecn', 'w') as hf:
+        #         mut_encst = hf['mutated_encoder_states'][:]
+
         answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
         # LSTM RNN model
         # _________________
 
-        lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_lstm)
+        lstm_model.train(orig_encst, mut_encst, answ, directory_lstm)
 
         lstm_model_eval = SiameseNetwork(encoder_hidden_units, batch_size, layers, '/device:CPU:0')
 
@@ -124,9 +156,9 @@ try:
     vocab_lower = 2
 
     length_from = 1
-    length_to = 100
+    length_to = 1000
 
-    batch_size = 1000
+    batch_size = 100
     max_batches = 5000
     batches_in_epoch = 1000
 
