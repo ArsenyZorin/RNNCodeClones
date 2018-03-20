@@ -3,6 +3,9 @@ import tensorflow as tf
 import json
 import sys
 import os
+
+import time
+import shutil
 from model import Seq2seq, SiameseNetwork
 
 tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
@@ -125,6 +128,7 @@ def siam_train(vectors, seq2seq_model, directory):
     lstm_model.train(orig_encst, mut_encst, answ, directory)
 
 
+def show_time(start):
     end = time.time()
     secs = round(end - start, 3)
     mins = 0
