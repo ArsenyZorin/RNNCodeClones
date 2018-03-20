@@ -48,7 +48,7 @@ class Seq2seq:
         self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
 
     def init_optimizer(self):
-        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+        self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(
             labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
             logits=self.decoder_logits,)
 
