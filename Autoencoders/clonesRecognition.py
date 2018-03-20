@@ -95,4 +95,19 @@ eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0
 
 lstm_model = SiameseNetwork(origin_encoder_states[0].shape[1], batch_size, layers)
 lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_lstm)
-lstm_model.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ)
+lstm_model.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ)def show_time(start):
+    end = time.time()
+    secs = round(end - start, 3)
+    mins = 0
+    hour = 0
+
+    if secs > 59:
+        mins = (int)(secs / 60)
+        secs -= mins * 60
+        if mins > 59:
+            hour = (int)(mins / 60)
+            mins -= hour * 60
+
+    if mins < 10:
+        mins = '0' + str(mins)
+    print('\nElapsed time: {}:{}:{}'.format(hour, mins, round(secs, 3)))
