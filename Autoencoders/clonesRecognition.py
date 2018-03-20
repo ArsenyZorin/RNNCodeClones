@@ -2,7 +2,15 @@ import numpy as np
 import tensorflow as tf
 import json
 import sys
+import os
 from model import Seq2seq, SiameseNetwork
+
+tf.flags.DEFINE_string('type', 'full', 'Type of evaluation. Could be: \n\ttrain\n\teval\n\tfull')
+tf.flags.DEFINE_string('data', os.path.expanduser('~/.rnncodeclones'), 'Directory with data for analysis')
+tf.flags.DEFINE_integer('cpus', 1, 'Amount of threads for evaluation')
+tf.flags.DEFINE_integer('gpus', None, 'Amount of GPUs for training')
+
+FLAGS = tf.flags.FLAGS
 
 if len(sys.argv) < 2:
     print('Invalid usage of Seq2seq script')
