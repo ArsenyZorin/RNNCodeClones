@@ -144,3 +144,56 @@ def show_time(start):
     if mins < 10:
         mins = '0' + str(mins)
     print('\nElapsed time: {}:{}:{}'.format(hour, mins, round(secs, 3)))
+
+
+def main(_):
+    start = time.time()
+
+    try:
+        tf.reset_default_graph()
+        print(tf.__version__)
+
+        seq2seq_dir = FLAGS.data + '/networks/seq2seqModel'
+        siam_dir = FLAGS.data + '/networks/siameseModel'
+        vectors_dir = FLAGS.data + '/vectors'
+
+        if FLAGS.type != 'eval':
+            if os.path.exists(seq2seq_dir):
+                shutil.rmtree(seq2seq_dir)
+            if os.path.exists(siam_dir):
+                shutil.rmtree(siam_dir)
+            os.mkdir(seq2seq_dir)
+            os.mkdir(siam_dir)
+
+        weights_file = open(FLAGS.data + '/networks/word2vec/pretrainedWeights', 'r')
+        weights = np.array(json.loads(weights_file.read()))
+
+        vocab = {'size': weights.shape[0], 'lower': 2}
+        length = {'from': 1, 'to': 1000}
+        batch = {'size': 100, 'max': 5000, 'epoch': 1000}
+
+        input_emb_size = weights.shape[1]
+
+        layers = 5
+        encoder_hidden_units = layers
+        decoder_hidden_units = encoder_hidden_units
+
+        encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
+        decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
+
+        seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab['size'], input_emb_size, weights)
+
+        if FLAGS.type == 'train':
+            train(seq2seq_model, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir)
+
+        show_time(start)
+
+    except KeyboardInterrupt:
+        print('Keyboard interruption')
+        show_time(start)
+        sys.exit(0)
+
+
+
+if __name__ == '__main__':
+    tf.app.run()
