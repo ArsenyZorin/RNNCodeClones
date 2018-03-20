@@ -108,6 +108,23 @@ def seq2seq_train(model, length, vocab, batch, directory):
                 batch['size'], batch['max'], batch['epoch'], directory)
 
 
+def siam_train(vectors, seq2seq_model, directory):
+    orig_file = open(vectors + '/indiciesOriginCode', 'r') # correct indices
+    mutated_file = open(vectors + '/indiciesMutatedCode', 'r')
+    nonclone_file = open(vectors + '/indiciesNonClone', 'r')
+
+    orig_seq = np.array(json.loads(orig_file.read()))
+    mutated_seq = np.array(json.loads(mutated_file.read()))
+    nonclone_seq = np.array(json.loads(nonclone_file.read()))
+
+    orig_encst = seq2seq_model.get_encoder_status(np.append(orig_seq, orig_seq[:nonclone_seq.shape[0]]))
+    mut_encst = seq2seq_model.get_encoder_status(np.append(mutated_seq, nonclone_seq))
+    answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
+
+    lstm_model = SiameseNetwork(orig_encst[0].shape[1], batch_size, layers)
+    lstm_model.train(orig_encst, mut_encst, answ, directory)
+
+
     end = time.time()
     secs = round(end - start, 3)
     mins = 0
