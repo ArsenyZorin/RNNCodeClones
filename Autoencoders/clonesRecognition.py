@@ -101,9 +101,9 @@ lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_
 lstm_model.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ)def show_time(start):
 
 
-def train(model, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir):
+def train(model, layers, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir):
     seq2seq_train(model, length, vocab, batch, seq2seq_dir)
-    siam_train(vectors_dir, model, siam_dir)
+    siam_train(vectors_dir, model, batch['size'], layers, siam_dir)
 
 
 def seq2seq_train(model, length, vocab, batch, directory):
@@ -111,7 +111,7 @@ def seq2seq_train(model, length, vocab, batch, directory):
                 batch['size'], batch['max'], batch['epoch'], directory)
 
 
-def siam_train(vectors, seq2seq_model, directory):
+def siam_train(vectors, seq2seq_model, batch_size, layers, directory):
     orig_file = open(vectors + '/indiciesOriginCode', 'r') # correct indices
     mutated_file = open(vectors + '/indiciesMutatedCode', 'r')
     nonclone_file = open(vectors + '/indiciesNonClone', 'r')
@@ -184,7 +184,7 @@ def main(_):
         seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab['size'], input_emb_size, weights)
 
         if FLAGS.type == 'train':
-            train(seq2seq_model, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir)
+            train(seq2seq_model, layers, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir)
 
         show_time(start)
 
@@ -192,7 +192,6 @@ def main(_):
         print('Keyboard interruption')
         show_time(start)
         sys.exit(0)
-
 
 
 if __name__ == '__main__':
