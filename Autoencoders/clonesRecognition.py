@@ -96,6 +96,16 @@ eval_answ = np.append(np.zeros(eval_seq.shape[0]), np.ones(eval_nonclone.shape[0
 lstm_model = SiameseNetwork(origin_encoder_states[0].shape[1], batch_size, layers)
 lstm_model.train(origin_encoder_states, mutated_encoder_states, answ, directory_lstm)
 lstm_model.eval(eval_orig_encoder_states, eval_clone_encoder_states, eval_answ)def show_time(start):
+def train():
+    seq2seq_train()
+    siam_train()
+
+
+def seq2seq_train(model, length, vocab, batch, directory):
+    model.train(length['from'], length['to'], vocab['lower'], vocab['size'],
+                batch['size'], batch['max'], batch['epoch'], directory)
+
+
     end = time.time()
     secs = round(end - start, 3)
     mins = 0
