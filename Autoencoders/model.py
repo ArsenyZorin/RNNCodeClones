@@ -120,6 +120,16 @@ class Seq2seq:
         except KeyboardInterrupt:
             print('training interrupted')
 
+    def restore(self, dir):
+        saver = tf.train.Saver(self.seq2seq_vars)
+        res, sess = helpers.load_model(saver, self.sess, dir)
+        if res:
+            self.sess = sess
+            print('Model restored from {}'.format(dir))
+            return self.sess
+        else:
+            return None
+
     def get_encoder_status(self, sequence):
         encoder_fs = []
         i = 1
