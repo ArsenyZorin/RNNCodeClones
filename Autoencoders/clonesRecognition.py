@@ -101,8 +101,8 @@ def main(_):
         weights = np.array(json.loads(weights_file.read()))
 
         vocab = {'size': weights.shape[0], 'lower': 2}
-        length = {'from': 1, 'to': 1000}
-        batch = {'size': 100, 'max': 5000, 'epoch': 100}
+        length = {'from': 1, 'to': 100}
+        batch = {'size': 1000, 'max': 5000, 'epoch': 100}
 
         layers = 5
         encoder_hidden_units = layers
