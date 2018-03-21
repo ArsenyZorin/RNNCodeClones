@@ -111,7 +111,7 @@ def main(_):
         if FLAGS.gpus is not None:
             enc_cells = []
             dec_cells = []
-            for i in range(FLAGS.gpus):
+            for i in range(layers):
                 enc_cells.append(tf.contrib.rnn.DeviceWrapper(
                     tf.contrib.rnn.LSTMCell(encoder_hidden_units),
                     '/gpu:%d' % (encoder_hidden_units % FLAGS.gpus)
