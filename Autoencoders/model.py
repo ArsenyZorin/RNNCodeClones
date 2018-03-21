@@ -69,20 +69,17 @@ class Seq2seq:
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.embeddings.assign(self.weights))
 
-    def train(self, length_from,
-              length_to, vocab_lower,
-              vocab_upper, batch_size,
-              max_batches, directory):
+    def train(self, length, vocab, batches, directory):
 
-        batches = helpers.random_sequences(length_from=length_from, length_to=length_to,
-                                           vocab_lower=vocab_lower, vocab_upper=vocab_upper,
-                                           batch_size=batch_size)
+        help_batch = helpers.random_sequences(length_from=length['from'], length_to=length['to'],
+                                              vocab_lower=vocab['lower'], vocab_upper=vocab['size'],
+                                              batch_size=batches['size'])
 
         saver = tf.train.Saver()
         result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
         if result:
             self.sess = sess
-            seq_batch = next(batches)
+            seq_batch = next(help_batch)
             loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
             print('model restored from {}'.format(directory))
             print('model loss: {}'.format(loss))
@@ -90,15 +87,17 @@ class Seq2seq:
 
         loss_track = []
         try:
-            for batch in range(max_batches + 1):
-                seq_batch = next(batches)
+            for batch in range(batches['max'] + 1):
+                seq_batch = next(help_batch)
                 fd = self.make_train_inputs(seq_batch, seq_batch)
                 _, l = self.sess.run([self.train_op, self.loss], fd)
                 loss_track.append(l)
                 current_loss = self.sess.run(self.loss, fd)
-                print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end="")
+                print('\rBatch ' + str(batch) + '/' + str(batches['max']) + ' loss: ' + str(current_loss), end="")
 
-#                if batch == 0 or batch % batches_in_epoch == 0:
+                if batch % batches['epoch'] == 0 or batch == batches['max']:
+                    save_path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
+
 #                    # print('\nbatch {}'.format(batch))
 #                    print('\tminibatch loss: {}'.format(current_loss))
 #                    # predict_ = self.sess.run(self.decoder_prediction, fd)
@@ -113,7 +112,8 @@ class Seq2seq:
             plt.plot(loss_track)
             plt.savefig('plotfig.png')
             print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
-                                                                         len(loss_track) * batch_size, batch_size))
+                                                                         len(loss_track) * batches['size'],
+                                                                         batches['size']))
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
             print("Trained model saved to {}".format(save_path))
 

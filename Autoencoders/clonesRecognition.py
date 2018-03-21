@@ -126,8 +126,7 @@ def eval(model, vectors_dir):
 
 def seq2seq_train(cell, length, vocab, weights, batch, directory):
     seq2seq_model = Seq2seq(cell['encoder'], cell['decoder'], vocab['size'], weights.shape[1], weights)
-    seq2seq_model.train(length['from'], length['to'], vocab['lower'], vocab['size'],
-                batch['size'], batch['max'], directory)
+    seq2seq_model.train(length, vocab, batch, directory)
     return seq2seq_model
 
 
@@ -198,7 +197,7 @@ def main(_):
 
         vocab = {'size': weights.shape[0], 'lower': 2}
         length = {'from': 1, 'to': 1000}
-        batch = {'size': 100, 'max': 5000, 'epoch': 1000}
+        batch = {'size': 100, 'max': 5000, 'epoch': 100}
 
         layers = 5
         encoder_hidden_units = layers
