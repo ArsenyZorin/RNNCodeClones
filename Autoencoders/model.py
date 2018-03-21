@@ -133,12 +133,14 @@ class Seq2seq:
 class SiameseNetwork:
     def __init__(self, sequence_length, batch_size, layers):
         self.scope = 'siamese'
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
         with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
             self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
             self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
             self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
 
-        self.sess = tf.InteractiveSession()
             self.sequence_length = sequence_length
             self.batch_size = batch_size
             self.layers = layers
