@@ -118,7 +118,7 @@ def train(model, layers, length, vocab, batch, seq2seq_dir, siam_dir, vectors_di
 
 def seq2seq_train(model, length, vocab, batch, directory):
     model.train(length['from'], length['to'], vocab['lower'], vocab['size'],
-                batch['size'], batch['max'], batch['epoch'], directory)
+                batch['size'], batch['max'], directory)
 
 
 def siam_train(vectors, seq2seq_model, batch_size, layers, directory):

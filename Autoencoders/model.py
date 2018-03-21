@@ -72,7 +72,7 @@ class Seq2seq:
     def train(self, length_from,
               length_to, vocab_lower,
               vocab_upper, batch_size,
-              max_batches, batches_in_epoch, directory):
+              max_batches, directory):
 
         batches = helpers.random_sequences(length_from=length_from, length_to=length_to,
                                            vocab_lower=vocab_lower, vocab_upper=vocab_upper,
@@ -98,17 +98,17 @@ class Seq2seq:
                 current_loss = self.sess.run(self.loss, fd)
                 print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(current_loss), end="")
 
-                if batch == 0 or batch % batches_in_epoch == 0:
-                    print('\nbatch {}'.format(batch))
-                    print('  minibatch loss: {}'.format(current_loss))
-                    predict_ = self.sess.run(self.decoder_prediction, fd)
-                    for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
-                        print('  sample {}:'.format(i + 1))
-                        print('    input     > {}'.format(inp))
-                        print('    predicted > {}'.format(pred))
-                        if i >= 2:
-                            break
-                    print()
+#                if batch == 0 or batch % batches_in_epoch == 0:
+#                    # print('\nbatch {}'.format(batch))
+#                    print('\tminibatch loss: {}'.format(current_loss))
+#                    # predict_ = self.sess.run(self.decoder_prediction, fd)
+#                    # for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
+#                    #     print('  sample {}:'.format(i + 1))
+#                    #     print('    input     > {}'.format(inp))
+#                    #     print('    predicted > {}'.format(pred))
+#                    #     if i >= 2:
+#                    #         break
+#                    print()
 
             plt.plot(loss_track)
             plt.savefig('plotfig.png')
