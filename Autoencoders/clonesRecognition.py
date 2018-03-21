@@ -105,7 +105,7 @@ def main(_):
         batch = {'size': 1000, 'max': 5000, 'epoch': 100}
 
         layers = 5
-        encoder_hidden_units = layers
+        encoder_hidden_units = 10
         decoder_hidden_units = encoder_hidden_units
 
         if FLAGS.gpus is not None:
