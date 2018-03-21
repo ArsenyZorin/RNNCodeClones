@@ -200,19 +200,33 @@ def main(_):
         length = {'from': 1, 'to': 1000}
         batch = {'size': 100, 'max': 5000, 'epoch': 1000}
 
-        input_emb_size = weights.shape[1]
-
         layers = 5
         encoder_hidden_units = layers
         decoder_hidden_units = encoder_hidden_units
 
-        encoder_cell = tf.contrib.rnn.LSTMCell(encoder_hidden_units)
-        decoder_cell = tf.contrib.rnn.LSTMCell(decoder_hidden_units)
-
-        seq2seq_model = Seq2seq(encoder_cell, decoder_cell, vocab['size'], input_emb_size, weights)
+        if FLAGS.gpus is not None:
+            enc_cells = []
+            dec_cells = []
+            for i in range(FLAGS.gpus):
+                enc_cells.append(tf.contrib.rnn.DeviceWrapper(
+                    tf.contrib.rnn.LSTMCell(encoder_hidden_units),
+                    '/gpu:%d' % (encoder_hidden_units % FLAGS.gpus)
+                ))
+                dec_cells.append(tf.contrib.rnn.DeviceWrapper(
+                    tf.contrib.rnn.LSTMCell(decoder_hidden_units),
+                    '/gpu:%d' % (decoder_hidden_units % FLAGS.gpus)
+                ))
+            cell = {'encoder': tf.contrib.rnn.MultiRNNCell(enc_cells),
+                    'decoder': tf.contrib.rnn.MultiRNNCell(dec_cells)}
+        else:
+            cell = {'encoder': tf.contrib.rnn.LSTMCell(encoder_hidden_units),
+                    'decoder': tf.contrib.rnn.LSTMCell(decoder_hidden_units)}
 
         if FLAGS.type == 'train':
-            train(seq2seq_model, layers, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir)
+            train(cell, layers, length, vocab, weights, batch, seq2seq_dir, siam_dir, vectors_dir)
+        elif FLAGS.type == 'full':
+            model = train(cell, layers, length, vocab, weights, batch, seq2seq_dir, siam_dir, vectors_dir)
+            eval(model, vectors_dir)
 
         show_time(start)
 
