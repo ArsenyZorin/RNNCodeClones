@@ -79,15 +79,15 @@ class Seq2seq:
                                               vocab_lower=vocab['lower'], vocab_upper=vocab['size'],
                                               batch_size=batches['size'])
 
-        saver = tf.train.Saver()
-        result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
-        if result:
-            self.sess = sess
-            seq_batch = next(help_batch)
-            loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
-            print('model restored from {}'.format(directory))
-            print('model loss: {}'.format(loss))
-            return self.sess
+        saver = tf.train.Saver(self.seq2seq_vars)
+#        result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
+#        if result:
+#            self.sess = sess
+#            seq_batch = next(help_batch)
+#            loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
+#            print('model restored from {}'.format(directory))
+#            print('model loss: {}'.format(loss))
+#            return self.sess
 
         loss_track = []
         try:
