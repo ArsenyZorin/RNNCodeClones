@@ -80,15 +80,6 @@ class Seq2seq:
                                               batch_size=batches['size'])
 
         saver = tf.train.Saver(self.seq2seq_vars)
-#        result, sess = helpers.load_model(saver, self.sess, directory + '/seq2seq.ckpt')
-#        if result:
-#            self.sess = sess
-#            seq_batch = next(help_batch)
-#            loss = self.sess.run(self.loss, self.make_train_inputs(seq_batch, seq_batch))
-#            print('model restored from {}'.format(directory))
-#            print('model loss: {}'.format(loss))
-#            return self.sess
-
         loss_track = []
         try:
             path = directory
@@ -97,22 +88,10 @@ class Seq2seq:
                 fd = self.make_train_inputs(seq_batch, seq_batch)
                 _, loss = self.sess.run([self.train_op, self.loss], fd)
                 loss_track.append(loss)
-                # current_loss = self.sess.run(self.loss, fd)
                 print('\rBatch ' + str(batch) + '/' + str(batches['max']) + ' loss: ' + str(loss), end="")
 
                 if batch == 0 or batch % batches['epoch'] == 0 or batch == batches['max']:
                     path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
-
-#                    # print('\nbatch {}'.format(batch))
-#                    print('\tminibatch loss: {}'.format(current_loss))
-#                    # predict_ = self.sess.run(self.decoder_prediction, fd)
-#                    # for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
-#                    #     print('  sample {}:'.format(i + 1))
-#                    #     print('    input     > {}'.format(inp))
-#                    #     print('    predicted > {}'.format(pred))
-#                    #     if i >= 2:
-#                    #         break
-#                    print()
 
             plt.plot(loss_track)
             plt.savefig('plotfig.png')
