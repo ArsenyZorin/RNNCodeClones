@@ -132,18 +132,22 @@ class Seq2seq:
 
 class SiameseNetwork:
     def __init__(self, sequence_length, batch_size, layers):
-        self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
-        self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
-        self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
+        self.scope = 'siamese'
+        with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
+            self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
+            self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
+            self.input_y = tf.placeholder(tf.float32, shape=None, name='answers')
 
-        self.sequence_length = sequence_length
-        self.batch_size = batch_size
-        self.layers = layers
         self.sess = tf.InteractiveSession()
+            self.sequence_length = sequence_length
+            self.batch_size = batch_size
+            self.layers = layers
 
-        self.init_out()
-        self.loss_accuracy_init()
-        self.sess.run(tf.global_variables_initializer())
+            self.init_out()
+            self.loss_accuracy_init()
+            self.sess.run(tf.global_variables_initializer())
+
+        self.siam_vars = tf.global_variables(self.scope)
 
     def init_out(self):
         self.out1 = self.rnn(self.input_x1, 'method1')
