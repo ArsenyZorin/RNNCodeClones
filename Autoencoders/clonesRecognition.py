@@ -111,14 +111,24 @@ _________
 '''
 
 
-def train(model, layers, length, vocab, batch, seq2seq_dir, siam_dir, vectors_dir):
-    seq2seq_train(model, length, vocab, batch, seq2seq_dir)
-    siam_train(vectors_dir, model, batch['size'], layers, siam_dir)
+def train(cell, layers, length, vocab, weights, batch, seq2seq_dir, siam_dir, vectors_dir):
+    model = {'seq2seq': seq2seq_train(cell, length, vocab, weights, batch, seq2seq_dir)}
+    model['siam'] = siam_train(vectors_dir, model['seq2seq'], batch['size'], layers, siam_dir)
+    return model
 
 
-def seq2seq_train(model, length, vocab, batch, directory):
-    model.train(length['from'], length['to'], vocab['lower'], vocab['size'],
+def eval(model, vectors_dir):
+    file = open(vectors_dir + '/originCode', 'r')
+    seq = np.array(json.loads(file.read()))
+    states = model['seq2seq'].get_encoder_status(seq)
+    return model['siam'].eval(states)
+
+
+def seq2seq_train(cell, length, vocab, weights, batch, directory):
+    seq2seq_model = Seq2seq(cell['encoder'], cell['decoder'], vocab['size'], weights.shape[1], weights)
+    seq2seq_model.train(length['from'], length['to'], vocab['lower'], vocab['size'],
                 batch['size'], batch['max'], directory)
+    return seq2seq_model
 
 
 def siam_train(vectors, seq2seq_model, batch_size, layers, directory):
@@ -134,8 +144,9 @@ def siam_train(vectors, seq2seq_model, batch_size, layers, directory):
     mut_encst = seq2seq_model.get_encoder_status(np.append(mutated_seq, nonclone_seq))
     answ = np.append(np.zeros(orig_seq.shape[0]), np.ones(nonclone_seq.shape[0]), axis=0)
 
-    lstm_model = SiameseNetwork(orig_encst[0].shape[1], batch_size, layers)
-    lstm_model.train(orig_encst, mut_encst, answ, directory)
+    siam_model = SiameseNetwork(orig_encst[0].shape[1], batch_size, layers)
+    siam_model.train(orig_encst, mut_encst, answ, directory)
+    return siam_model
 
 
 def show_time(start):
