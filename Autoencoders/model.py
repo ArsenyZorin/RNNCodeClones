@@ -115,7 +115,7 @@ class Seq2seq:
 
             plt.plot(loss_track)
             plt.savefig('plotfig.png')
-            print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
+            print('\nLoss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batches['size'],
                                                                          batches['size']))
             save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
@@ -254,7 +254,7 @@ class SiameseNetwork:
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
             print('TRAIN: step {}, loss {:g}'.format(nn, loss))
-            print(y_batch, dist, temp_sim)
+            print('EXPECTED: {}, GOT: {}'.format(y_batch, dist))
 
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
