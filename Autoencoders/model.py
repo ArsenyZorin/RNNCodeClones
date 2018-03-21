@@ -91,6 +91,7 @@ class Seq2seq:
 
         loss_track = []
         try:
+            path = directory
             for batch in range(batches['max'] + 1):
                 seq_batch = next(help_batch)
                 fd = self.make_train_inputs(seq_batch, seq_batch)
@@ -99,8 +100,8 @@ class Seq2seq:
                 # current_loss = self.sess.run(self.loss, fd)
                 print('\rBatch ' + str(batch) + '/' + str(batches['max']) + ' loss: ' + str(loss), end="")
 
-                if batch % batches['epoch'] == 0 or batch == batches['max']:
-                    save_path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
+                if batch == 0 or batch % batches['epoch'] == 0 or batch == batches['max']:
+                    path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
 
 #                    # print('\nbatch {}'.format(batch))
 #                    print('\tminibatch loss: {}'.format(current_loss))
@@ -118,8 +119,7 @@ class Seq2seq:
             print('\nLoss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batches['size'],
                                                                          batches['size']))
-            save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
-            print("Trained model saved to {}".format(save_path))
+            print("Trained model saved to {}".format(path))
 
         except KeyboardInterrupt:
             print('training interrupted')
