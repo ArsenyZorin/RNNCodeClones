@@ -225,14 +225,16 @@ class SiameseNetwork:
         batches = helpers.siam_batches(input_x1, input_x2, input_y)
         data_size = batches.shape[0]
 
-        saver = tf.train.Saver()
-        result, sess = helpers.load_model(saver, self.sess, directory + '/siam.ckpt')
-        if result:
-            self.sess = sess
-            print('model restored from {}'.format(directory))
-            return self.sess
+        # saver = tf.train.Saver()
+        # result, sess = helpers.load_model(saver, self.sess, directory + '/siam.ckpt')
+        # if result:
+        #     self.sess = sess
+        #     print('model restored from {}'.format(directory))
+        #     return self.sess
 
         print(data_size)
+        saver = tf.train.Saver(self.siam_vars)
+        save_path = directory
         for nn in range(data_size):
             x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
             y_batch = batches[nn][2]
@@ -242,9 +244,20 @@ class SiameseNetwork:
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
             print('TRAIN: step {}, loss {:g}'.format(nn, loss))
             print('EXPECTED: {}, GOT: {}'.format(y_batch, dist))
+            if nn == 0 or nn % 1000 == 0 or nn == data_size - 1:
+                save_path = saver.save(self.sess, directory + '/siam.ckpt', global_step=nn)
 
-        save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
+
+    def restore(self, dir):
+        saver = tf.train.Saver(self.siam_vars)
+        res, sess = helpers.load_model(saver, self.sess, dir)
+        if res:
+            self.sess = sess
+            print('Model restored from {}'.format(dir))
+            return self.sess
+        else:
+            return None
 
     def eval(self, input_x1, input_x2, answ):
         eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
