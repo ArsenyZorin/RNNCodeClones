@@ -7,13 +7,17 @@ from random import random
 class Seq2seq:
 
     def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
-        self.encoder_cell = encoder_cell
-        self.decoder_cell = decoder_cell
-        self.vocab_size = vocab_size
-        self.input_embedding_size = input_embedding_size
-        self.sess = tf.InteractiveSession()
-        self.weights = weights
-        self.create_model()
+        self.scope = 'seq2seq_'
+        with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
+            self.encoder_cell = encoder_cell
+            self.decoder_cell = decoder_cell
+            self.vocab_size = vocab_size
+            self.input_embedding_size = input_embedding_size
+            self.sess = tf.InteractiveSession()
+            self.weights = weights
+            self.create_model()
+
+        self.seq2seq_vars = tf.global_variables(self.scope)
 
     def create_model(self):
         self.create_placeholders()
