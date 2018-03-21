@@ -174,6 +174,13 @@ def main(_):
         tf.reset_default_graph()
         print(tf.__version__)
 
+        if FLAGS.type != 'eval' and FLAGS.type != 'train' and FLAGS.type != 'full':
+            print('Unknown type flag.')
+            print('Allowable values are:')
+            print('\ttrain\n\teval\n\tfull')
+            show_time(start)
+            sys.exit(1)
+
         seq2seq_dir = FLAGS.data + '/networks/seq2seqModel'
         siam_dir = FLAGS.data + '/networks/siameseModel'
         vectors_dir = FLAGS.data + '/vectors'
