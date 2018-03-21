@@ -242,8 +242,9 @@ class SiameseNetwork:
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
-            print('TRAIN: step {}, loss {:g}'.format(nn, loss))
-            print('EXPECTED: {}, GOT: {}'.format(y_batch, dist))
+            print('\rTRAIN: step {}/{} |\tloss {:g} |\t{} -- {}'.format(nn, data_size, loss, y_batch, dist), end="")
+            # print('TRAIN: step {}, loss {:g}'.format(nn, loss))
+            # print('EXPECTED: {}, GOT: {}'.format(y_batch, dist))
             if nn == 0 or nn % 1000 == 0 or nn == data_size - 1:
                 save_path = saver.save(self.sess, directory + '/siam.ckpt', global_step=nn)
 
