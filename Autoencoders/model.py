@@ -94,10 +94,10 @@ class Seq2seq:
             for batch in range(batches['max'] + 1):
                 seq_batch = next(help_batch)
                 fd = self.make_train_inputs(seq_batch, seq_batch)
-                _, l = self.sess.run([self.train_op, self.loss], fd)
-                loss_track.append(l)
-                current_loss = self.sess.run(self.loss, fd)
-                print('\rBatch ' + str(batch) + '/' + str(batches['max']) + ' loss: ' + str(current_loss), end="")
+                _, loss = self.sess.run([self.train_op, self.loss], fd)
+                loss_track.append(loss)
+                # current_loss = self.sess.run(self.loss, fd)
+                print('\rBatch ' + str(batch) + '/' + str(batches['max']) + ' loss: ' + str(loss), end="")
 
                 if batch % batches['epoch'] == 0 or batch == batches['max']:
                     save_path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
