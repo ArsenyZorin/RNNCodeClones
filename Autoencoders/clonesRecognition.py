@@ -95,17 +95,20 @@ def main(_):
             show_time(start)
             sys.exit(1)
 
-        seq2seq_dir = FLAGS.data + '/networks/seq2seqModel'
-        siam_dir = FLAGS.data + '/networks/siameseModel'
-        vectors_dir = FLAGS.data + '/vectors'
+        dirs = {'seq2seq': FLAGS.data + '/networks/seq2seqModel',
+               'siam': FLAGS.data + '/networks/siameseModel',
+               'vecs': FLAGS.data + '/vectors'}
+#        seq2seq_dir = FLAGS.data + '/networks/seq2seqModel'
+#        siam_dir = FLAGS.data + '/networks/siameseModel'
+#        vectors_dir = FLAGS.data + '/vectors'
 
         if FLAGS.type != 'eval':
-            if os.path.exists(seq2seq_dir):
-                shutil.rmtree(seq2seq_dir)
-            if os.path.exists(siam_dir):
-                shutil.rmtree(siam_dir)
-            os.mkdir(seq2seq_dir)
-            os.mkdir(siam_dir)
+            if os.path.exists(dirs['seq2seq']):
+                shutil.rmtree(dirs['seq2seq'])
+            if os.path.exists(dirs['siam']):
+                shutil.rmtree(dirs['siam'])
+            os.mkdir(dirs['seq2seq'])
+            os.mkdir(dirs['siam'])
 
         weights_file = open(FLAGS.data + '/networks/word2vec/pretrainedWeights', 'r')
         weights = np.array(json.loads(weights_file.read()))
@@ -137,10 +140,13 @@ def main(_):
                     'decoder': tf.contrib.rnn.LSTMCell(decoder_hidden_units)}
 
         if FLAGS.type == 'train':
-            train(cell, layers, length, vocab, weights, batch, seq2seq_dir, siam_dir, vectors_dir)
+            train(cell, layers, length, vocab, weights, batch, dirs['seq2seq'], dirs['siam'], dirs['vecs'])
         elif FLAGS.type == 'full':
-            model = train(cell, layers, length, vocab, weights, batch, seq2seq_dir, siam_dir, vectors_dir)
-            eval(model, vectors_dir)
+            model = train(cell, layers, length, vocab, weights, batch, dirs['seq2seq'], dirs['siam'], dirs['vecs'])
+            eval(model, dirs['vecs'])
+        elif FLAGS.type == 'eval':
+            model = restore_models(dirs, cell, vocab, weights, batch, layers)
+            eval(model, dirs['vecs'])
 
         show_time(start)
 
