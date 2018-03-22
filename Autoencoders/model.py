@@ -1,6 +1,8 @@
 import helpers
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import numpy as np
+import sys
 from random import random
 
 
@@ -236,13 +238,15 @@ class SiameseNetwork:
         saver = tf.train.Saver(self.siam_vars)
         save_path = directory
         for nn in range(data_size):
+
             x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
             y_batch = batches[nn][2]
 
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
-            print('\rTRAIN: step {}/{} |\tloss {:g} |\t{} -- {}'.format(nn, data_size, loss, y_batch, dist), end="")
+            # print('\rTRAIN: step {}/{} |\tloss {:g} |\t{} -- {}'.format(nn, data_size, loss, y_batch, dist), end="")
+            print('TRAIN: step {}/{}\tloss {:g} |\tExpected: {}\tGot: {}'.format(nn, data_size, loss, y_batch, dist))
             # print('TRAIN: step {}, loss {:g}'.format(nn, loss))
             # print('EXPECTED: {}, GOT: {}'.format(y_batch, dist))
             if nn == 0 or nn % 1000 == 0 or nn == data_size - 1:
@@ -260,21 +264,88 @@ class SiameseNetwork:
         else:
             return None
 
-    def eval(self, input_x1, input_x2, answ):
-        eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
-        data_size = eval_batches.shape[0]
+    def eval(self, input_x1, input_x2=None, answ=None):
+        if input_x2 is not None and answ is not None:
+            eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
+            data_size = eval_batches.shape[0]
 
-        print(data_size)
+            eval_res = []
+            step = 0
+            for i in range(data_size):
+                step += 1
+                eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], step, eval_res)
+
+            percentage = len(eval_res) / data_size
+            print('Evaluation accuracy: {}'.format(percentage))
+
+        elif input_x2 is None and answ is None:
+            eval_batches = np.asarray(input_x1)
+            data_size = eval_batches.shape[0]
+
+            eval_res = []
+            clones_list = []
+            step = 0
+
+            for i in range(data_size):
+                for n in range(data_size, i + 1, -1):
+                    if i == n:
+                        continue
+                    step += 1
+                    eval_res += self.step(eval_batches[i], eval_batches[n], None, step, clones)
+
+            percentage = len(eval_res) / data_size
+            print('Clones percentage: {}'.format(percentage))
+            return clones_list
+        else:
+            print('Invalid evaluation')
+            sys.exit(1)
+
+    def step(self, x1, x2, answ, step, clones):
         eval_res = []
-        for nn in range(data_size):
-            x1_batch, x2_batch = helpers.shape_diff(eval_batches[nn][0], eval_batches[nn][1])
+        x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
-            feed_dict = self.dict_feed(x1_batch, x2_batch)
-            dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
-            print('EVAL: step {}'.format(nn))
-            print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
-            if int(eval_batches[nn][2]) == int(dist):
+        feed_dict = self.dict_feed(x1_batch, x2_batch)
+        dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+        print('EVAL: step {}'.format(step))
+        if answ is not None:
+            print('Expected: {}\t Got {}:'.format(answ, dist))
+            if int(x2[2]) == int(dist):
                 eval_res.append(1)
+        else:
+            print('Answer: {}'.format(dist))
+            if 1 == int(dist):
+                eval_res.append(1)
+                clones.append(x2)
 
-        percentage = len(eval_res) / data_size
-        print('Evaluation accuracy: {}'.format(percentage))
+        return eval_res
+
+    #def eval(self, input_x1, input_x2, answ):
+    #    if input_x2 is not None and answ is not None:
+    #        # eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
+    #        eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
+    #        data_size = eval_batches.shape[0]
+
+    #    # print(data_size)
+    #        eval_res = []
+    #        for nn in range(data_size):
+    #            x1_batch, x2_batch = helpers.shape_diff(eval_batches[nn][0], eval_batches[nn][1])
+
+    #            feed_dict = self.dict_feed(x1_batch, x2_batch)
+    #            dist, _ = self.sess.run([self.distance, self.temp_sim], feed_dict)
+    #            print('EVAL: step {}\t| Expected: {}\tGot: {}'.format(nn, eval_batches[nn][2], dist))
+    #            # print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
+    #            if int(eval_batches[nn][2]) == int(dist):
+    #                eval_res.append(1)
+
+    #        percentage = len(eval_res) / data_size
+    #        print('Evaluation accuracy: {}'.format(percentage))
+    #    elif input_x2 is None and answ is None:
+    #        eval_batches = np.asarray(input_x1)
+    #        data_size = eval_batches.shape[0]
+
+    #        eval_res = []
+    #        clones_list = []
+
+    #        for nn in range(data_size):
+    #            x1_batch, x2_batch = helpers.shape_diff(x1,x2)
+
