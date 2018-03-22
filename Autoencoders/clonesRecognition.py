@@ -26,6 +26,7 @@ def eval(model, vectors_dir):
     file = open(vectors_dir + '/originCode', 'r')
     seq = np.array(json.loads(file.read()))
     states = model['seq2seq'].get_encoder_status(seq)
+
     return model['siam'].eval(states)
 
 
@@ -51,6 +52,15 @@ def siam_train(vectors, seq2seq_model, batch_size, layers, directory):
     siam_model = SiameseNetwork(orig_encst[0].shape[1], batch_size, layers)
     siam_model.train(orig_encst, mut_encst, answ, directory)
     return siam_model
+
+
+def restore_models(dirs, cell, vocab, weights, batch, layers):
+    model = {'seq2seq': Seq2seq(cell['encoder'], cell['decoder'], vocab['size'], weights.shape[1], weights),
+             'siam': SiameseNetwork(cell['encoder'], batch['size'], layers)}
+
+    model['seq2seq'].restore(dirs['seq2seq'])
+    model['siam'].restore(dirs['siam'])
+    return model
 
 
 def show_time(start):
