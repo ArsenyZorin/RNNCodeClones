@@ -94,14 +94,15 @@ class Seq2seq:
                 loss_track.append(loss)
                 print('\rBatch {}/{}\tloss: {}\tshape: {}'.format(batch, batches['max'], loss, state.shape), end="")
 
-                if batch == 0 or batch % batches['epoch'] == 0 or batch == batches['max']:
-                    path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
+                # if batch == 0 or batch % batches['epoch'] == 0 or batch == batches['max']:
+                #    path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
 
             plt.plot(loss_track)
             plt.savefig('plotfig.png')
             print('\nLoss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batches['size'],
                                                                          batches['size']))
+            path = saver.save(self.sess, directory + '/seq2seq.ckpt')
             print("Trained model saved to {}".format(path))
 
         except KeyboardInterrupt:
