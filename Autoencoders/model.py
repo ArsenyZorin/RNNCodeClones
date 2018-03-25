@@ -64,13 +64,13 @@ class Seq2seq:
         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
     def make_train_inputs(self, input_seq, target_seq):
-        self.encoder_inputs_, _ = helpers.batch(input_seq)
-        self.decoder_targets_, _ = helpers.batch(target_seq)
-        self.decoder_inputs_, _ = helpers.batch(input_seq)
+        encoder_inputs_, _ = helpers.batch(input_seq)
+        decoder_targets_, _ = helpers.batch(target_seq)
+        decoder_inputs_, _ = helpers.batch(input_seq)
         return {
-            self.encoder_inputs: self.encoder_inputs_,
-            self.decoder_inputs: self.decoder_inputs_,
-            self.decoder_targets: self.decoder_targets_,
+            self.encoder_inputs: encoder_inputs_,
+            self.decoder_inputs: decoder_inputs_,
+            self.decoder_targets: decoder_targets_,
         }
 
     def create_sess(self):
