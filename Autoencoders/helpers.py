@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 import os
+import glob
+import re
 
 
 def batch(inputs, max_sequence_length=None):
@@ -74,9 +76,11 @@ def save_model(directory, name, sess):
 
 
 def load_model(saver, sess, directory):
-    if os.path.exists(directory + '.meta'):
+    files = glob.glob(directory + '/*.meta*')
+    if len(files) > 0:
         try:
-            saver.restore(sess, directory)
+            file = re.sub('-.*', '', files[len(files) - 1])
+            saver.restore(sess, file)
         except Exception:
             print('Serialization load error')
             return False, None
