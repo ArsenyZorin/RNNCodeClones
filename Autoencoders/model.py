@@ -118,14 +118,23 @@ class Seq2seq:
             return None
 
     def get_encoder_status(self, sequence):
-        encoder_fs = []
-        i = 1
-        for seq in sequence:
-            feed_dict = {self.encoder_inputs: [seq]}
-            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            print('\r{}/{}'.format(i, sequence.size), end='')
-            i += 1
-        print()
+        # encoder_fs = []
+        # i = 1
+        # for seq in sequence:
+        #     feed_dict = {self.encoder_inputs: helpers.batch([seq])}
+        #     stat = self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict)
+        #     encoder_fs.append(stat)
+        #     print('\r{}/{}\tshape:{}'.format(i, sequence.size, stat), end='')
+        #     i += 1
+        # print()
+        step = int(len(sequence) / 1000)
+
+        encoder_fs =[]
+        for i in range(0, len(sequence), 1000):
+            fd = {self.encoder_inputs: helpers.batch(sequence[i:i+1000])}
+            stat = self.sess.run(self.encoder_final_state[0], feed_dict=fd)
+            encoder_fs.append(stat)
+
         return encoder_fs
 
     def get_sess(self):
