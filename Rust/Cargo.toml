@@ -1,0 +1,10 @@
+[package]
+name = "rnncc"
+version = "0.1.0"
+authors = ["Arseny Zorin <zorinarseny@yandex.ru>"]
+
+[dependencies]
+tensorflow = "0.7.0"
+reqwest = "0.8.5"
+image = "*"
+getopts = "0.2"
