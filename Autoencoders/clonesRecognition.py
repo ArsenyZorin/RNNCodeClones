@@ -54,12 +54,14 @@ def siam_train(vectors, seq2seq_model, batch_size, layers, directory):
     return siam_model
 
 
-def restore_models(dirs, cell, vocab, weights, batch, layers):
+def restore_models(dirs, cell, vocab, length, weights, batch, layers):
     model = {'seq2seq': Seq2seq(cell['encoder'], cell['decoder'], vocab['size'], weights.shape[1], weights),
-             'siam': SiameseNetwork(cell['encoder'], batch['size'], layers)}
+             'siam': SiameseNetwork(layers, batch['size'], layers)}
 
-    model['seq2seq'].restore(dirs['seq2seq'])
-    model['siam'].restore(dirs['siam'])
+    if model['seq2seq'].restore(dirs['seq2seq']) is None:
+        seq2seq_train(cell, length, vocab, weights, batch, dirs['seq2seq'])
+    if model['siam'].restore(dirs['siam']) is None:
+        siam_train(dirs['vecs'], model['seq2seq'], batch['size'], layers, dirs['siam'])
     return model
 
 
@@ -98,9 +100,6 @@ def main(_):
         dirs = {'seq2seq': FLAGS.data + '/networks/seq2seqModel',
                'siam': FLAGS.data + '/networks/siameseModel',
                'vecs': FLAGS.data + '/vectors'}
-#        seq2seq_dir = FLAGS.data + '/networks/seq2seqModel'
-#        siam_dir = FLAGS.data + '/networks/siameseModel'
-#        vectors_dir = FLAGS.data + '/vectors'
 
         if FLAGS.type != 'eval':
             if os.path.exists(dirs['seq2seq']):
@@ -115,7 +114,7 @@ def main(_):
 
         vocab = {'size': weights.shape[0], 'lower': 2}
         length = {'from': 1, 'to': 100}
-        batch = {'size': 1000, 'max': 5000, 'epoch': 1000}
+        batch = {'size': 1000, 'max': 1500, 'epoch': 1000}
 
         layers = 5
         encoder_hidden_units = 10
@@ -145,7 +144,7 @@ def main(_):
             model = train(cell, layers, length, vocab, weights, batch, dirs['seq2seq'], dirs['siam'], dirs['vecs'])
             eval(model, dirs['vecs'])
         elif FLAGS.type == 'eval':
-            model = restore_models(dirs, cell, vocab, weights, batch, layers)
+            model = restore_models(dirs, cell, vocab, length, weights, batch, layers)
             eval(model, dirs['vecs'])
 
         show_time(start)
