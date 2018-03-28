@@ -1,6 +1,5 @@
 import helpers
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import numpy as np
 import sys
 from random import random
@@ -97,8 +96,6 @@ class Seq2seq:
                 # if batch == 0 or batch % batches['epoch'] == 0 or batch == batches['max']:
                 #    path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
 
-            plt.plot(loss_track)
-            plt.savefig('plotfig.png')
             print('\nLoss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
                                                                          len(loss_track) * batches['size'],
                                                                          batches['size']))
