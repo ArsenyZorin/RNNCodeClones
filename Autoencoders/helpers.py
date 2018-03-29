@@ -79,7 +79,7 @@ def load_model(saver, sess, directory):
     files = glob.glob(directory + '/*.meta*')
     if len(files) > 0:
         try:
-            file = re.sub('-.*', '', files[len(files) - 1])
+            file = re.sub('-*.meta', '', files[len(files) - 1])
             saver.restore(sess, file)
         except Exception:
             print('Serialization load error')
