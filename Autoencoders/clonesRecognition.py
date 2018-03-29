@@ -58,9 +58,22 @@ def restore_models(dirs, cell, vocab, length, weights, batch, layers):
     model = {'seq2seq': Seq2seq(cell['encoder'], cell['decoder'], vocab['size'], weights.shape[1], weights),
              'siam': SiameseNetwork(layers, batch['size'], layers)}
 
-    if model['seq2seq'].restore(dirs['seq2seq']) is None:
+    if os.path.exists(dirs['seq2seq']):
+        if model['seq2seq'].restore(dirs['seq2seq']) is None:
+            shutil.rmtree(dirs['seq2seq'])
+            os.mkdir(dirs['seq2seq'])
+            seq2seq_train(cell, length, vocab, weights, batch, dirs['seq2seq'])
+    else:
+        os.mkdir(dirs['seq2seq'])
         seq2seq_train(cell, length, vocab, weights, batch, dirs['seq2seq'])
-    if model['siam'].restore(dirs['siam']) is None:
+
+    if os.path.exists(dirs['siam']):
+        if model['siam'].restore(dirs['siam']) is None:
+            shutil.rmtree(dirs['siam'])
+            os.mkdir(dirs['siam'])
+            siam_train(dirs['vecs'], model['seq2seq'], batch['size'], layers, dirs['siam'])
+    else:
+        os.mkdir(dirs['siam'])
         siam_train(dirs['vecs'], model['seq2seq'], batch['size'], layers, dirs['siam'])
     return model
 
