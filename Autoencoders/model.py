@@ -235,6 +235,8 @@ class SiameseNetwork:
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
             print('TRAIN: step {}/{}\tloss {:g} |\tExpected: {}\tGot: {}'.format(nn, data_size, loss, y_batch, dist))
 
+        saver = tf.train.Saver(self.siam_vars)
+        save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
     def restore(self, dir):
