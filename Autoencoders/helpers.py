@@ -81,8 +81,8 @@ def load_model(saver, sess, directory):
         try:
             file = re.sub('-*.meta', '', files[len(files) - 1])
             saver.restore(sess, file)
-        except Exception:
-            print('Serialization load error')
+        except Exception as e:
+            print('Serialization load error {}'.format(e))
             return False, None
         return True, sess
     return False, None
