@@ -129,7 +129,7 @@ def main(_):
         length = {'from': 1, 'to': 100}
         batch = {'size': 1000, 'max': 1500, 'epoch': 1000}
 
-        layers = 5
+        layers = 10
         encoder_hidden_units = 10
         decoder_hidden_units = encoder_hidden_units
 
