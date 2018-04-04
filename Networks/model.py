@@ -2,13 +2,6 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
-<<<<<<< HEAD
-import itertools
-import threading
-import math
-from cloneClass import CloneClass
-=======
->>>>>>> working_copy
 from random import random
 
 
