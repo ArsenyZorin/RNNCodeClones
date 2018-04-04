@@ -2,21 +2,23 @@ import helpers
 import tensorflow as tf
 import numpy as np
 import sys
+<<<<<<< HEAD
 import itertools
 import threading
 import math
 from cloneClass import CloneClass
+=======
+>>>>>>> working_copy
 from random import random
 
 
 class Seq2seq:
 
-    def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights, device):
+    def __init__(self, encoder_cell, decoder_cell, vocab_size, input_embedding_size, weights):
         self.scope = 'seq2seq_'
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
-        self.device = device
         with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
             self.encoder_cell = encoder_cell
             self.decoder_cell = decoder_cell
@@ -30,155 +32,116 @@ class Seq2seq:
     def create_model(self):
         self.create_placeholders()
         self.create_embeddings()
-
         self.init_encoder()
         self.init_decoder()
         self.init_optimizer()
         self.create_sess()
 
     def create_placeholders(self):
-        self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
-                                                name='encoder_inputs')
-        self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32,
-                                                name='decoder_targets')
-        self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32,
-                                                name='decoder_inputs')
+        self.encoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32, name='encoder_inputs')
+        self.decoder_targets = tf.placeholder(shape=(None, None), dtype=tf.int32, name='decoder_targets')
+        self.decoder_inputs = tf.placeholder(shape=(None, None), dtype=tf.int32, name='decoder_inputs')
 
     def create_embeddings(self):
-        self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0),
-                                        dtype=tf.float32, name='embeddings')
-
-        self.encoder_inputs_embedded = tf.gather(self.embeddings, self.encoder_inputs, name='encoder_inputs_emb')
-        self.decoder_inputs_embedded = tf.gather(self.embeddings, self.decoder_inputs, name='decoder_inputs_emb')
+        self.embeddings = tf.Variable(tf.random_uniform([self.vocab_size, self.input_embedding_size], -1.0, 1.0), dtype=tf.float32)
+        self.encoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.encoder_inputs)
+        self.decoder_inputs_embedded = tf.nn.embedding_lookup(self.embeddings, self.decoder_inputs)
 
     def init_encoder(self):
-        with tf.device(self.device):
-            self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
-                self.encoder_cell, self.encoder_inputs_embedded,
-                dtype=tf.float32, time_major=True,)
+        self.encoder_outputs, self.encoder_final_state = tf.nn.dynamic_rnn(
+            self.encoder_cell, self.encoder_inputs_embedded,
+            dtype=tf.float32, time_major=True,)
 
     def init_decoder(self):
         self.decoder_outputs, self.decoder_final_state = tf.nn.dynamic_rnn(
             self.decoder_cell, self.decoder_inputs_embedded,
-                initial_state=self.encoder_final_state,
-                dtype=tf.float32, time_major=True, scope='plain_decoder',)
+            initial_state=self.encoder_final_state,
+            dtype=tf.float32, time_major=True, scope="plain_decoder",)
 
         self.decoder_logits = tf.contrib.layers.linear(self.decoder_outputs, self.vocab_size)
         self.decoder_prediction = tf.argmax(self.decoder_logits, 2)
 
     def init_optimizer(self):
         self.stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(
-                labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
-                logits=self.decoder_logits, name='stepwise')
+            labels=tf.one_hot(self.decoder_targets, depth=self.vocab_size, dtype=tf.float32),
+            logits=self.decoder_logits,)
 
         self.loss = tf.reduce_mean(self.stepwise_cross_entropy)
         self.train_op = tf.train.AdamOptimizer().minimize(self.loss)
 
     def make_train_inputs(self, input_seq, target_seq):
-        self.encoder_inputs_, _ = helpers.batch(input_seq)
-        self.decoder_targets_, _ = helpers.batch(target_seq)
-        self.decoder_inputs_, _ = helpers.batch(input_seq)
+        encoder_inputs_, _ = helpers.batch(input_seq)
+        decoder_targets_, _ = helpers.batch(target_seq)
+        decoder_inputs_, _ = helpers.batch(input_seq)
         return {
-            self.encoder_inputs: self.encoder_inputs_,
-            self.decoder_inputs: self.decoder_inputs_,
-            self.decoder_targets: self.decoder_targets_,
+            self.encoder_inputs: encoder_inputs_,
+            self.decoder_inputs: decoder_inputs_,
+            self.decoder_targets: decoder_targets_,
         }
 
     def create_sess(self):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(self.embeddings.assign(self.weights))
 
-    def train(self, length_from,
-              length_to, vocab_lower,
-              vocab_upper, batch_size,
-              max_batches, batches_in_epoch, directory):
+    def train(self, length, vocab, batches, directory):
 
-        batches = helpers.random_sequences(length_from=length_from, length_to=length_to,
-                                           vocab_lower=vocab_lower, vocab_upper=vocab_upper,
-                                           batch_size=batch_size)
+        help_batch = helpers.random_sequences(length_from=length['from'], length_to=length['to'],
+                                              vocab_lower=vocab['lower'], vocab_upper=vocab['size'],
+                                              batch_size=batches['size'])
 
+        saver = tf.train.Saver(self.seq2seq_vars)
         loss_track = []
-        for batch in range(max_batches + 1):
-            seq_batch = next(batches)
-            fd = self.make_train_inputs(seq_batch, seq_batch)
-            _, loss = self.sess.run([self.train_op, self.loss], fd)
-            loss_track.append(loss)
-            print('\rBatch ' + str(batch) + '/' + str(max_batches) + ' loss: ' + str(loss), end='')
+        try:
+            path = directory
+            for batch in range(batches['max'] + 1):
+                seq_batch = next(help_batch)
+                fd = self.make_train_inputs(seq_batch, seq_batch)
+                _, loss, state = self.sess.run([self.train_op, self.loss, self.encoder_final_state[0]], fd)
+                loss_track.append(loss)
+                print('\rBatch {}/{}\tloss: {}\tshape: {}'.format(batch, batches['max'], loss, state.shape), end="")
 
-            if batch == 0 or batch % batches_in_epoch == 0:
-                print('\nbatch {}'.format(batch))
-                print('  minibatch loss: {}'.format(loss))
-                predict_ = self.sess.run(self.decoder_prediction, fd)
-                for i, (inp, pred) in enumerate(zip(fd[self.encoder_inputs].T, predict_.T)):
-                    print('  sample {}:'.format(i + 1))
-                    print('    input     > {}'.format(inp))
-                    print('    predicted > {}'.format(pred))
-                    if i >= 2:
-                        break
-                print()
+                # if batch == 0 or batch % batches['epoch'] == 0 or batch == batches['max']:
+                #    path = saver.save(self.sess, directory + '/seq2seq.ckpt', global_step=batch)
 
-        print('loss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
-                                                                         len(loss_track) * batch_size, batch_size))
+            print('\nLoss {:.4f} after {} examples (batch_size={})'.format(loss_track[-1],
+                                                                         len(loss_track) * batches['size'],
+                                                                         batches['size']))
+            path = saver.save(self.sess, directory + '/seq2seq.ckpt')
+            print("Trained model saved to {}".format(path))
+
+        except KeyboardInterrupt:
+            print('training interrupted')
+
+    def restore(self, dir):
         saver = tf.train.Saver(self.seq2seq_vars)
-        save_path = saver.save(self.sess, directory + '/seq2seq.ckpt')
-        print('Trained model saved to {}'.format(save_path))
-
-    def restore(self, directory):
-        saver = tf.train.Saver(self.seq2seq_vars)
-        result, sess = helpers.load_model(saver, self.sess, directory)
-        if result:
+        res, sess = helpers.load_model(saver, self.sess, dir)
+        if res:
             self.sess = sess
-            print('model restored from {}'.format(directory))
+            print('Model restored from {}'.format(dir))
             return self.sess
         else:
             return None
 
-    def get_encoder_status(self, sequence, threads_num):
+    def get_encoder_status(self, sequence):
         encoder_fs = []
-        coord = tf.train.Coordinator()
-
-        elems_in_tread = int(len(sequence) / threads_num)
-        threads = [threading.Thread(
-            target=self.loop,
-            args=(i * (elems_in_tread + 1), elems_in_tread, sequence, encoder_fs))
-                for i in range(threads_num)
-        ]
-        for t in threads:
-            t.start()
-
-        coord.join(threads)
-
+        for i in range(0, len(sequence)):
+            feed_dict = {self.encoder_inputs: np.transpose([sequence[i]])}
+            stat = self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict)
+            encoder_fs.append(stat)
+            print('\r{}/{}\tshape:{}'.format(len(encoder_fs), sequence.size, stat.shape), end='')
         print()
         return encoder_fs
-
-    def loop(self, begin, elems_thr, sequence, encoder_fs):
-        end = begin + elems_thr
-        if end >= len(sequence):
-            end = len(sequence) - 1
-        for num in range(begin, end + 1):
-            feed_dict = {self.encoder_inputs: [sequence[num]]}
-            encoder_fs.append(self.sess.run(self.encoder_final_state[0], feed_dict=feed_dict))
-            print('\rEncoded {}/{}'.format(len(encoder_fs), len(sequence)), end='')
-
-    def decode(self, sequence):
-        decoder_outp = []
-        for seq in sequence:
-            feed_dict = {self.decoder_inputs: [seq]}
-            decoder_outp.append(self.sess.run(self.decoder_outputs, feed_dict=feed_dict))
-
-        return decoder_outp
 
     def get_sess(self):
         return self.sess
 
 
 class SiameseNetwork:
-    def __init__(self, sequence_length, batch_size, layers, device):
-        self.scope = 'siamese_'
+    def __init__(self, sequence_length, batch_size, layers):
+        self.scope = 'siamese'
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
-        self.device = device
         with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
             self.input_x1 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='originInd')
             self.input_x2 = tf.placeholder(tf.float32, shape=(None, sequence_length), name='cloneInd')
@@ -195,14 +158,13 @@ class SiameseNetwork:
         self.siam_vars = tf.global_variables(self.scope)
 
     def init_out(self):
-        with tf.device(self.device):
-            self.out1 = self.rnn(self.input_x1, 'method1')
-            self.out2 = self.rnn(self.input_x2, 'method2')
-            self.distance = tf.sqrt(tf.reduce_sum(
-                            tf.square(tf.subtract(self.out1, self.out2))))
-            self.distance = tf.div(self.distance,
-                            tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
-                                    tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
+        self.out1 = self.rnn(self.input_x1, 'method1')
+        self.out2 = self.rnn(self.input_x2, 'method2')
+        self.distance = tf.sqrt(tf.reduce_sum(
+            tf.square(tf.subtract(self.out1, self.out2))))
+        self.distance = tf.div(self.distance,
+                               tf.add(tf.sqrt(tf.reduce_sum(tf.square(self.out1))),
+                                      tf.sqrt(tf.reduce_sum(tf.square(self.out2)))))
 
     def loss_accuracy_init(self):
         self.temp_sim = tf.subtract(tf.ones_like(self.distance, dtype=tf.float32),
@@ -271,25 +233,30 @@ class SiameseNetwork:
 
         print(data_size)
         for nn in range(data_size):
+
             x1_batch, x2_batch = helpers.shape_diff(batches[nn][0], batches[nn][1])
             y_batch = batches[nn][2]
-           # x1_batch, x2_batch = batches[nn][0], batches[nn][1]
-           # y_batch = batches[nn][2]
 
             feed_dict = self.dict_feed(x1_batch, x2_batch, y_batch)
             _, loss, dist, temp_sim = \
                 self.sess.run([self.train_op, self.loss, self.distance, self.temp_sim], feed_dict)
-
-            print('\rStep ' + str(nn) + '/' + str(data_size), end='')
-            # if nn == 0 or nn % 100 == 0:
-            print('\nTRAIN: step {}, loss {:g}'.format(nn, loss))
-            print('Expected: {}, got: {}'.format(y_batch, dist))
+            print('TRAIN: step {}/{}\tloss {:g} |\tExpected: {}\tGot: {}'.format(nn, data_size, loss, y_batch, dist))
 
         saver = tf.train.Saver(self.siam_vars)
         save_path = saver.save(self.sess, directory + '/siam.ckpt')
         print('Trained model saved to {}'.format(save_path))
 
-    def eval(self, input_x1, input_x2=None, answ=None, threads_num=1):
+    def restore(self, dir):
+        saver = tf.train.Saver(self.siam_vars)
+        res, sess = helpers.load_model(saver, self.sess, dir)
+        if res:
+            self.sess = sess
+            print('Model restored from {}'.format(dir))
+            return self.sess
+        else:
+            return None
+
+    def eval(self, input_x1, input_x2=None, answ=None):
         if input_x2 is not None and answ is not None:
             eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
             data_size = eval_batches.shape[0]
@@ -298,7 +265,7 @@ class SiameseNetwork:
             step = 0
             for i in range(data_size):
                 step += 1
-                eval_res += self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2])  # , eval_res)
+                eval_res = self.step(eval_batches[i][0], eval_batches[i][1], eval_batches[i][2], step, eval_res)
 
             percentage = len(eval_res) / data_size
             print('Evaluation accuracy: {}'.format(percentage))
@@ -309,74 +276,68 @@ class SiameseNetwork:
 
             eval_res = []
             clones_list = []
+            step = 0
 
-            self.iteration = 1
-            self.length = int(math.factorial(data_size)/(math.factorial(data_size - 2) * math.factorial(2)))
+            for i in range(data_size):
+                for n in range(data_size, i + 1, -1):
+                    if i == n:
+                        continue
+                    step += 1
+                    eval_res += self.step(eval_batches[i], eval_batches[n], None, step, clones)
 
-            elems_in_tread = int(data_size / threads_num)
-
-            coord = tf.train.Coordinator()
-            threads = [threading.Thread(
-                    target=self.loop,
-                    args=(coord, eval_batches, i * (elems_in_tread + 1), elems_in_tread, eval_res))
-                        for i in range(threads_num)
-            ]
-
-            for t in threads:
-                t.start()
-
-            coord.join(threads)
-            percentage = len(eval_res) / self.length
-            print()
+            percentage = len(eval_res) / data_size
             print('Clones percentage: {}'.format(percentage))
             return clones_list
         else:
-            print('Invalid evaluation arguments')
+            print('Invalid evaluation')
             sys.exit(1)
 
-    def loop(self, coord, batches, begin, elems_thr, eval_res):
-        while not coord.should_stop():
-            try:
-                end = begin + elems_thr
-                if end >= len(batches):
-                    end = len(batches) - 1
-                combs = itertools.combinations(batches[begin:end + 1], 2)
-                for x, y in combs:
-                    # clone = CloneClass(x)
-                    eval_res += self.step(x, y, None)  # , clone)
-                    print('\rChecked: {}/{}'.format(self.iteration, self.length), end='')
-                    self.iteration += 1
-                    # clones_list.append(clone)
-            except KeyboardInterrupt:
-                coord.request_stop()
-            finally:
-                coord.request_stop()
-
-    def step(self, x1, x2, answ):  # , clones):
+    def step(self, x1, x2, answ, step, clones):
         eval_res = []
         x1_batch, x2_batch = helpers.shape_diff(x1, x2)
 
         feed_dict = self.dict_feed(x1_batch, x2_batch)
-        dist = self.sess.run([self.distance], feed_dict)
+        dist, sim = self.sess.run([self.distance, self.temp_sim], feed_dict)
+        print('EVAL: step {}'.format(step))
         if answ is not None:
             print('Expected: {}\t Got {}:'.format(answ, dist))
-            if int(answ) == int(dist[0]):
+            if int(x2[2]) == int(dist):
                 eval_res.append(1)
         else:
-            if 1 == int(round(dist[0])):
+            print('Answer: {}'.format(dist))
+            if 1 == int(dist):
                 eval_res.append(1)
-               # clones.append(x2)
+                clones.append(x2)
 
         return eval_res
 
-    def restore(self, directory):
-        try:
-            saver = tf.train.Saver(self.siam_vars)
-            result, sess = helpers.load_model(saver, self.sess, directory)
-            if result:
-                self.sess = sess
-                print('model restored from {}'.format(directory))
-                return self.sess
-            return None
-        except Exception:
-            return None
+    #def eval(self, input_x1, input_x2, answ):
+    #    if input_x2 is not None and answ is not None:
+    #        # eval_batches = helpers.siam_batches(input_x1, input_x2, answ)
+    #        eval_batches = np.asarray(list(zip(input_x1, input_x2, answ)))
+    #        data_size = eval_batches.shape[0]
+
+    #    # print(data_size)
+    #        eval_res = []
+    #        for nn in range(data_size):
+    #            x1_batch, x2_batch = helpers.shape_diff(eval_batches[nn][0], eval_batches[nn][1])
+
+    #            feed_dict = self.dict_feed(x1_batch, x2_batch)
+    #            dist, _ = self.sess.run([self.distance, self.temp_sim], feed_dict)
+    #            print('EVAL: step {}\t| Expected: {}\tGot: {}'.format(nn, eval_batches[nn][2], dist))
+    #            # print('Expected: {}\t Got {}:'.format(eval_batches[nn][2], dist))
+    #            if int(eval_batches[nn][2]) == int(dist):
+    #                eval_res.append(1)
+
+    #        percentage = len(eval_res) / data_size
+    #        print('Evaluation accuracy: {}'.format(percentage))
+    #    elif input_x2 is None and answ is None:
+    #        eval_batches = np.asarray(input_x1)
+    #        data_size = eval_batches.shape[0]
+
+    #        eval_res = []
+    #        clones_list = []
+
+    #        for nn in range(data_size):
+    #            x1_batch, x2_batch = helpers.shape_diff(x1,x2)
+

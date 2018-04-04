@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import glob
+import re
 
 
 def batch(inputs, max_sequence_length=None):
@@ -63,11 +65,13 @@ def random_sequences(length_from, length_to,
 
 
 def load_model(saver, sess, directory):
-    if os.path.exists(directory + '.meta'):
+    files = glob.glob(directory + '/*.meta*')
+    if len(files) > 0:
         try:
-            saver.restore(sess, directory)
+            file = re.sub('-*.meta', '', files[len(files) - 1])
+            saver.restore(sess, file)
         except Exception as e:
-            print('Serialization load error:\n' + str(e))
+            print('Serialization load error {}'.format(e))
             return False, None
         return True, sess
     return False, None
