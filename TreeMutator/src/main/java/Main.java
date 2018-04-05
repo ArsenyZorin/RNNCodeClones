@@ -98,8 +98,8 @@ public class Main {
         Repository repository = null;
         if(dir == null)
             repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
-        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", savePath + "/indiciesOriginCode");
-        mutate(treeMutator, emb, originTree, savePath + "/indiciesMutatedCode");
+        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", savePath + "/indicesOriginCode");
+        mutate(treeMutator, emb, originTree, savePath + "/indicesMutatedCode");
         if(repository != null)
             repository.removeRepo();
         else
@@ -110,7 +110,7 @@ public class Main {
             }
 
         repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
-        evaluate(treeMutator, emb, "/tmp/netbeans", savePath + "/indiciesNonClone");
+        evaluate(treeMutator, emb, "/tmp/netbeans", savePath + "/indicesNonClone");
         repository.removeRepo();
 
 
