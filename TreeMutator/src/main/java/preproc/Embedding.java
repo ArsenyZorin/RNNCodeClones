@@ -54,15 +54,18 @@ public class Embedding {
         ideaRepo = repository.getRepoFile();
         System.out.println("Additional analysis : " + ideaRepo.getAbsolutePath());
         List<ASTEntry> tree = treeMutator.analyzeDir(ideaRepo.getAbsolutePath());
-        List<String> treeTokens = new ArrayList<>();
+        //List<String> treeTokens = new ArrayList<>();
+        AbstractMap<String, String> treeTokens = new HashMap<>();
 
         for (ASTEntry token : tree) {
-            treeTokens.add(token.getAllTokensString());
+            String ident = String.format("Path: %s Start: %d End: %d", token.filePath, token.sourceStart, token.sourceEnd);
+            treeTokens.put(ident, token.getAllTokensString());
+            //treeTokens.add(token.getAllTokensString());
             System.out.print("\rTokensString: " + tree.indexOf(token) + "/" + tree.size());
         }
 
         TokenizerFactory t = new DefaultTokenizerFactory();
-        SentenceIterator iter = new CollectionSentenceIterator(treeTokens);
+        SentenceIterator iter = new CollectionSentenceIterator(treeTokens.values());
         System.out.println("\nBuilding model...");
         mainVec = new Word2Vec.Builder()
                 .minWordFrequency(1)
@@ -100,17 +103,20 @@ public class Embedding {
      */
     public void createEmbedding(List<ASTEntry> code_tokens, String save_path) {
         System.out.println("Embedding creation started");
-        List<List<Integer>> allIndexes = new ArrayList<>();
+        //List<List<Integer>> allIndexes = new ArrayList<>();
+        AbstractMap<String, List<Integer>> all_indices = new HashMap<>();
 
-        for (ASTEntry tokenList : codeTokens) {
+        for (ASTEntry token_list : code_tokens) {
             List<Integer> tokenIndexes = new ArrayList<>();
-            for (String token : tokenList.getAllTokensList())
+            for (String token : token_list.getAllTokensList())
                 tokenIndexes.add(mainVec.indexOf(token));
-            allIndexes.add(tokenIndexes);
-            System.out.print(String.format("\rEmbedding creation: %s/%s", codeTokens.indexOf(tokenList) + 1, codeTokens.size()));
+            String ident = String.format("Path: %s Start: %d End: %d", token_list.filePath, token_list.sourceStart, token_list.sourceEnd);
+            all_indices.put(ident, tokenIndexes);
+            //allIndexes.add(tokenIndexes);
+            System.out.print(String.format("\rEmbedding creation: %s/%s", code_tokens.indexOf(token_list) + 1, code_tokens.size()));
         }
         System.out.println();
-        gsonSerialization(allIndexes, savePath);
+        gsonSerialization(all_indices , save_path);
     }
 
     /***
