@@ -70,11 +70,11 @@ public class Main {
             evaluate(tree_mutator, emb, "/home/arseny/evals/jdbc", save_file + "/EvalNonClone");
         }
 
-        String path = Main.class.getResource("/clonesRecognition.py").getPath();
-        System.out.println(path);
+        // String path = Main.class.getResource("/clonesRecognition.py").getPath();
+        // System.out.println(path);
 
-        String pythonArgs = "--type full --data " + args.getOutputDir();
-//        pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
+        // String pythonArgs = "--type full --data " + args.getOutputDir();
+        // pythonExec("/home/arseny/Repos/RNNCodeClones/Networks/clonesRecognition.py", pythonArgs);
     }
 
     public Main getMain() {
