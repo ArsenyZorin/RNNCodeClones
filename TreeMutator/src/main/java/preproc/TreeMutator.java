@@ -18,59 +18,59 @@ public class TreeMutator {
     private static final String JAVA_EXTENSION = ".java";
     private static final String METHOD_TOKEN = "METHOD";
     private static final String CODEBLOCK_TOKEN= "CODE_BLOCK";
-    private static List<String> blackList;
-    private static List<String> whiteList;
-    private final PsiGen psiGenerator;
+    private static List<String> black_list;
+    private static List<String> white_list;
+    private final PsiGen psi_generator;
 
-    public TreeMutator(final PsiGen psiGenerator) {
-        this.psiGenerator = psiGenerator;
+    public TreeMutator(final PsiGen psi_generator) {
+        this.psi_generator = psi_generator;
     }
 
-    public TreeMutator(final PsiGen psiGenerator, final List<String> blackList, final List<String> whiteList) {
-        this.psiGenerator = psiGenerator;
-        this.blackList = blackList;
-        this.whiteList = whiteList;
+    public TreeMutator(final PsiGen psi_generator, final List<String> black_list, final List<String> white_list) {
+        this.psi_generator = psi_generator;
+        this.black_list = black_list;
+        this.white_list = white_list;
     }
 
-    private static boolean checkFileExtension(Path filePath) {
-        String fileName = filePath.getFileName().toString();
-        return fileName.endsWith(JAVA_EXTENSION);
+    private static boolean checkFileExtension(Path file_path) {
+        String file_name = file_path.getFileName().toString();
+        return file_name.endsWith(JAVA_EXTENSION);
     }
 
-    private List<ASTEntry> analyzeDirectory(String repoPath) throws IOException{
+    private List<ASTEntry> analyzeDirectory(String repo_path) throws IOException{
 
-        List<ASTEntry> repoTree = new ArrayList<>();
-        final List<String> javaFiles = Files.walk(Paths.get(repoPath),
+        List<ASTEntry> repo_tree = new ArrayList<>();
+        final List<String> java_files = Files.walk(Paths.get(repo_path),
                 FileVisitOption.FOLLOW_LINKS).
                 filter(f -> Files.isRegularFile(f))
                 .filter(TreeMutator::checkFileExtension)
                 .map(Path::toString)
-                .map(s -> s.replace(repoPath, ""))
+                .map(s -> s.replace(repo_path, ""))
                 .collect(Collectors.toList());
 
-        if(javaFiles.isEmpty()){
+        if(java_files.isEmpty()){
             System.out.println("Dir for analyzing is empty");
             System.exit(1);
         }
 
-        for(String file : javaFiles){
-            System.out.print(String.format("Analyzing: %s/%s\tFile name: %s",
-                    javaFiles.indexOf(file), javaFiles.size(), file));
+        for(String file : java_files){
+            System.out.print(String.format("Analyzing: %s/%s",
+                    java_files.indexOf(file), java_files.size()));
             ASTEntry tree;
             try {
-                tree = this.psiGenerator.parseFile(repoPath + file).removeSpaces(blackList);
+                tree = this.psi_generator.parseFile(repo_path + file).removeSpaces(black_list);
             } catch (NullPointerException ex){
                 continue;
             }
-            repoTree.add(tree);
+            repo_tree.add(tree);
             System.out.print("\r\b");
         }
-        return getMethodBlocks(repoTree);
+        return getMethodBlocks(repo_tree);
     }
 
     public List<ASTEntry> treeMutator(List<ASTEntry> trees){
         for(ASTEntry node : trees) {
-            node.mutate(blackList);
+            node.mutate(black_list);
             System.out.print(String.format("Mutates completed: %s/%s", trees.indexOf(node), trees.size()));
             System.out.print("\r\b");
         }

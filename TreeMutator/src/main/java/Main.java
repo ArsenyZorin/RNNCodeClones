@@ -39,37 +39,35 @@ public class Main {
             return;
         }
 
-        List<String> whiteList = getAllAvailableTokens();
-        List<String> blackList = whiteList.stream()
-                .filter(p -> contains(spaces, p)).collect(Collectors.toList());
+        List<String> white_list = getAllAvailableTokens();
+        List<String> black_list = white_list.stream()
+                .filter(Main::contains).collect(Collectors.toList());
 
-        TreeMutator treeMutator = new TreeMutator(generator, blackList, whiteList);
-        whiteList.removeAll(blackList);
-        Embedding emb = new Embedding(treeMutator, args.getEvalType(), args.getOutputDir());
-        String saveFile = args.getOutputDir() + "/vectors";
+        TreeMutator tree_mutator = new TreeMutator(generator, black_list, white_list);
+        white_list.removeAll(black_list);
+        Embedding emb = new Embedding(tree_mutator, args.getEvalType(), args.getOutputDir());
+        String save_file = args.getOutputDir() + "/vectors";
+        String repo_path = args.getInputDir();
 
         if (EvalType.MUTATE.toString().equals(args.getEvalType().toUpperCase())) {
             System.out.println("Directory for mutation: " + args.getInputDir());
-            String repoPath = args.getInputDir();
-            mutate(treeMutator, emb,
-                    evaluate(treeMutator, emb, repoPath, saveFile + "/EvalCode"),
+            mutate(tree_mutator, emb,
+                    evaluate(tree_mutator, emb, repo_path, save_file + "/EvalCode"),
                     args.getOutputDir() + "/EvalMutatedCode");
-            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", saveFile + "/EvalNonClone");
+            evaluate(tree_mutator, emb, repo_path, save_file + "/EvalNonClone");
 
         } else if (EvalType.EVAL.toString().equals(args.getEvalType().toUpperCase())) {
-            String repoPath = args.getInputDir();
-            System.out.println("Start analyzing repo : " + repoPath);
-            evaluate(treeMutator, emb, repoPath, saveFile + "/originCode");
+            System.out.println("Start analyzing repo : " + repo_path);
+            evaluate(tree_mutator, emb, repo_path, save_file + "/originCode");
         } else if (EvalType.TRAIN.toString().equals(args.getEvalType().toUpperCase())) {
-            train(treeMutator, emb, saveFile);
+            train(tree_mutator, emb, save_file);
         } else {
             System.out.println("Directory for analysis: " + args.getInputDir());
-            String repoPath = args.getInputDir();
-            train(treeMutator, emb, saveFile);
+            train(tree_mutator, emb, save_file);
 
-            List<ASTEntry> tree = evaluate(treeMutator, emb, repoPath, saveFile + "/EvalCode");
-            mutate(treeMutator, emb, tree, saveFile + "/EvalMutatedCode");
-            evaluate(treeMutator, emb, "/home/arseny/evals/jdbc", saveFile + "/EvalNonClone");
+            List<ASTEntry> tree = evaluate(tree_mutator, emb, repo_path, save_file + "/originCode");
+            mutate(tree_mutator, emb, tree, save_file + "/EvalMutatedCode");
+            evaluate(tree_mutator, emb, "/home/arseny/evals/jdbc", save_file + "/EvalNonClone");
         }
 
         String path = Main.class.getResource("/clonesRecognition.py").getPath();
@@ -83,21 +81,20 @@ public class Main {
         return this;
     }
 
-    private static boolean contains(List<String> blackList, String nodeName){
-        for(String blackElem : blackList)
-            if(nodeName.contains(blackElem))
+    private static boolean contains(String nodeName){
+        for(String black_elem : Main.spaces)
+            if(nodeName.contains(black_elem))
                 return true;
 
         return false;
     }
 
-    private static void train(TreeMutator treeMutator, Embedding emb, String savePath){
+    private static void train(TreeMutator tree_mutator, Embedding emb, String save_path){
         File dir = emb.getIdeaRepo();
         Repository repository = null;
         if(dir == null)
-            repository = new Repository("/tmp/intellij-community", "https://github.com/JetBrains/intellij-community.git");
-        List<ASTEntry> originTree = evaluate(treeMutator, emb, "/tmp/intellij-community", savePath + "/indiciesOriginCode");
-        mutate(treeMutator, emb, originTree, savePath + "/indiciesMutatedCode");
+            repository = new Repository("/tmp/intellij-community", "https://siemens.spbpu.com/arseny/intellij-community.git");
+        mutate(tree_mutator, emb, origin_tree, save_path + "/indiciesMutatedCode");
         if(repository != null)
             repository.removeRepo();
         else
@@ -107,22 +104,20 @@ public class Main {
                 ex.printStackTrace();
             }
 
-        repository = new Repository("/tmp/netbeans", "https://github.com/apache/incubator-netbeans.git");
-        evaluate(treeMutator, emb, "/tmp/netbeans", savePath + "/indiciesNonClone");
+        repository = new Repository("/tmp/netbeans", "https://siemens.spbpu.com/arseny/incubator-netbeans.git");
+        evaluate(tree_mutator, emb, "/tmp/netbeans", save_path + "/indiciesNonClone");
         repository.removeRepo();
-
-
     }
 
-    private static List<ASTEntry> evaluate(TreeMutator treeMutator, Embedding emb, String repoPath, String fileName){
-        List<ASTEntry> tree = treeMutator.analyzeDir(repoPath);
-        emb.createEmbedding(tree, fileName);
+    private static List<ASTEntry> evaluate(TreeMutator tree_mutator, Embedding emb, String repo_path, String file_name){
+        List<ASTEntry> tree = tree_mutator.analyzeDir(repo_path);
+        emb.createEmbedding(tree, file_name);
         return tree;
     }
 
-    private static void mutate(TreeMutator treeMutator, Embedding emb, List<ASTEntry> originTree, String path){
-        List<ASTEntry> mutatedTree = treeMutator.treeMutator(originTree);
-        emb.createEmbedding(mutatedTree, path);
+    private static void mutate(TreeMutator tree_mutator, Embedding emb, List<ASTEntry> origin_tree, String path){
+        List<ASTEntry> mutated_tree = tree_mutator.treeMutator(origin_tree);
+        emb.createEmbedding(mutated_tree, path);
     }
 
     private static List<String> getAllAvailableTokens() {
