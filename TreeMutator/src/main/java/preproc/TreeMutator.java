@@ -1,11 +1,8 @@
 package preproc;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.ObjectUtils;
 import trees.ASTEntry;
 import trees.PsiGen;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
