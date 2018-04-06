@@ -32,11 +32,22 @@ public class TreeMutator {
         this.white_list = white_list;
     }
 
+    /***
+     * Checks whether file has java extension
+     * @param file_path Path of file for extension checking
+     * @return True if file is .java
+     */
     private static boolean checkFileExtension(Path file_path) {
         String file_name = file_path.getFileName().toString();
         return file_name.endsWith(JAVA_EXTENSION);
     }
 
+    /***
+     * Analyze all files in directory and create AST
+     * @param repo_path Path to directory for analysis
+     * @return List of AST for every method in directory
+     * @throws IOException
+     */
     private List<ASTEntry> analyzeDirectory(String repo_path) throws IOException{
 
         List<ASTEntry> repo_tree = new ArrayList<>();
@@ -68,6 +79,11 @@ public class TreeMutator {
         return getMethodBlocks(repo_tree);
     }
 
+    /***
+     * Mutates every node in a tree
+     * @param trees List of trees for mutation
+     * @return List of mutated trees
+     */
     public List<ASTEntry> treeMutator(List<ASTEntry> trees){
         for(ASTEntry node : trees) {
             node.mutate(black_list);
@@ -78,6 +94,11 @@ public class TreeMutator {
         return trees;
     }
 
+    /***
+     * Extracts methods from every tree in a list of trees
+     * @param trees List of trees for methods extraction
+     * @return List of all methods in the tree
+     */
     private List<ASTEntry> getMethodBlocks(List<ASTEntry> trees){
         List<ASTEntry> methodsList = new ArrayList<>();
         for(ASTEntry tree : trees){

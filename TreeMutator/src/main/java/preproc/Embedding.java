@@ -43,6 +43,11 @@ public class Embedding {
         return ideaRepo;
     }
 
+    /***
+     * Method for word2vec model training.
+     *
+     * Uses openjdk from siemens.spbpu.com for training model
+     */
     public void train() {
         Repository repository = new Repository("/tmp/intellij-community",
                 "https://github.com/JetBrains/intellij-community.git");
@@ -87,7 +92,13 @@ public class Embedding {
         System.out.println("ADDITIONAL ANALYSIS COMPLETE");
     }
 
-    public void createEmbedding(List<ASTEntry> codeTokens, String savePath) {
+    /***
+     * Creates vector representations of tokens based on word2vec model
+     *
+     * @param code_tokens Dict of tokens for embeddings creation
+     * @param save_path Path where to save embeddings
+     */
+    public void createEmbedding(List<ASTEntry> code_tokens, String save_path) {
         System.out.println("Embedding creation started");
         List<List<Integer>> allIndexes = new ArrayList<>();
 
@@ -102,6 +113,12 @@ public class Embedding {
         gsonSerialization(allIndexes, savePath);
     }
 
+    /***
+     * Method for JSON serialization of object
+     *
+     * @param obj Object for serialization
+     * @param path Path where to save file
+     */
     private void gsonSerialization(Object obj, String path) {
         Gson gson = new Gson();
 
