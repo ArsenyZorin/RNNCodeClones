@@ -66,8 +66,8 @@ public class Main {
             train(tree_mutator, emb, save_file);
 
             List<ASTEntry> tree = evaluate(tree_mutator, emb, repo_path, save_file + "/originCode");
-            mutate(tree_mutator, emb, tree, save_file + "/EvalMutatedCode");
-            evaluate(tree_mutator, emb, "/home/arseny/evals/jdbc", save_file + "/EvalNonClone");
+            //mutate(tree_mutator, emb, tree, save_file + "/EvalMutatedCode");
+            //evaluate(tree_mutator, emb, "/home/arseny/evals/jdbc", save_file + "/EvalNonClone");
         }
 
         // String path = Main.class.getResource("/clonesRecognition.py").getPath();
@@ -94,6 +94,7 @@ public class Main {
         Repository repository = null;
         if(dir == null)
             repository = new Repository("/tmp/intellij-community", "https://siemens.spbpu.com/arseny/intellij-community.git");
+        List<ASTEntry> origin_tree = evaluate(tree_mutator, emb, /*"/tmp/intellij-community"*/"/tmp/w2v_train", save_path + "/indiciesOriginCode");
         mutate(tree_mutator, emb, origin_tree, save_path + "/indiciesMutatedCode");
         if(repository != null)
             repository.removeRepo();
