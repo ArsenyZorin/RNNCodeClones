@@ -11,10 +11,8 @@ import trees.ASTEntry;
 import trees.PsiGen;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class Main {
