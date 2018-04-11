@@ -93,9 +93,9 @@ public class Main {
         File dir = emb.getIdeaRepo();
         Repository repository = null;
         if(dir == null)
-            repository = new Repository("/tmp/intellij-community", "https://siemens.spbpu.com/arseny/intellij-community.git");
-        List<ASTEntry> origin_tree = evaluate(tree_mutator, emb, /*"/tmp/intellij-community"*/"/tmp/w2v_train", save_path + "/indiciesOriginCode");
-        mutate(tree_mutator, emb, origin_tree, save_path + "/indiciesMutatedCode");
+            repository = new Repository("/tmp/w2v_train", "https://siemens.spbpu.com/arseny/intellij-community.git");
+        List<ASTEntry> origin_tree = evaluate(tree_mutator, emb, "/tmp/w2v_train", save_path + "/indicesOriginCode");
+        mutate(tree_mutator, emb, origin_tree, save_path + "/indicesMutatedCode");
         if(repository != null)
             repository.removeRepo();
         else
@@ -105,8 +105,8 @@ public class Main {
                 ex.printStackTrace();
             }
 
-        repository = new Repository("/tmp/netbeans", "https://siemens.spbpu.com/arseny/incubator-netbeans.git");
-        evaluate(tree_mutator, emb, "/tmp/netbeans", save_path + "/indiciesNonClone");
+        repository = new Repository("/tmp/w2v_inf", "https://siemens.spbpu.com/arseny/incubator-netbeans.git");
+        evaluate(tree_mutator, emb, "/tmp/w2v_inf", save_path + "/indicesNonClone");
         repository.removeRepo();
     }
 
