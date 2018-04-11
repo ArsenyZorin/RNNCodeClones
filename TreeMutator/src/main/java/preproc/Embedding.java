@@ -3,6 +3,7 @@ package preproc;
 import arguments.EvalType;
 import com.google.gson.Gson;
 import gitrepos.Repository;
+import org.bytedeco.javacpp.presets.opencv_core;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.text.sentenceiterator.CollectionSentenceIterator;
@@ -13,7 +14,9 @@ import trees.ASTEntry;
 
 
 import java.io.*;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Embedding {
@@ -49,8 +52,12 @@ public class Embedding {
      * Uses openjdk from siemens.spbpu.com for training model
      */
     public void train() {
-        Repository repository = new Repository("/tmp/intellij-community",
-                "https://github.com/JetBrains/intellij-community.git");
+        Repository repository = new Repository("/tmp/w2v_train",
+                 "https://siemens.spbpu.com/arseny/openjdk.git");
+
+        /// Clone from local repo. (Debug vers)
+//        Repository repository = new Repository("/tmp/w2v_train", "/home/azorin/Repos/RNNCodeClones");
+
         ideaRepo = repository.getRepoFile();
         System.out.println("Additional analysis : " + ideaRepo.getAbsolutePath());
         List<ASTEntry> tree = treeMutator.analyzeDir(ideaRepo.getAbsolutePath());
